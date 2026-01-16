@@ -1,0 +1,1347 @@
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Package, ShoppingBag, Star, Lightbulb, Trash2, Edit2, Save, Filter, TrendingUp, Download, Tag, X, Check, Calendar, Grid, List, Camera, Image, BarChart3, PieChart, Activity } from 'lucide-react';
+
+const WardrobeApp = () => {
+  const [activeTab, setActiveTab] = useState('wardrobe');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [wardrobeItems, setWardrobeItems] = useState({});
+  const [shoppingList, setShoppingList] = useState([]);
+  const [outfits, setOutfits] = useState([]);
+  const [inspirationLinks, setInspirationLinks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [editingItem, setEditingItem] = useState(null);
+  const [newItem, setNewItem] = useState({ name: '', category: 'suits', status: 'есть', priority: 'низкий', tags: '', notes: '', photo: '' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
+  const [showStats, setShowStats] = useState(true);
+  const [outfitFilter, setOutfitFilter] = useState('all');
+  const [newShop, setNewShop] = useState({ item: '', priority: 'СРЕДНИЙ', price: '', category: '', plannedDate: '' });
+  const [newOutfit, setNewOutfit] = useState({ name: '', category: '', season: '', items: '' });
+  const [newLink, setNewLink] = useState('');
+  const [viewMode, setViewMode] = useState('list'); // 'list' или 'grid'
+  const [uploadingPhoto, setUploadingPhoto] = useState(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const wardrobeResult = await window.storage.get('wardrobe-data-v2');
+      const shoppingResult = await window.storage.get('shopping-data-v2');
+      const outfitsResult = await window.storage.get('outfits-data-v2');
+      const linksResult = await window.storage.get('inspiration-data-v2');
+
+      if (wardrobeResult) {
+        setWardrobeItems(JSON.parse(wardrobeResult.value));
+      } else {
+        const initial = loadInitialWardrobe();
+        setWardrobeItems(initial);
+        await window.storage.set('wardrobe-data-v2', JSON.stringify(initial));
+      }
+
+      if (shoppingResult) {
+        setShoppingList(JSON.parse(shoppingResult.value));
+      } else {
+        const initial = loadInitialShopping();
+        setShoppingList(initial);
+        await window.storage.set('shopping-data-v2', JSON.stringify(initial));
+      }
+
+      if (outfitsResult) {
+        setOutfits(JSON.parse(outfitsResult.value));
+      } else {
+        const initial = loadInitialOutfits();
+        setOutfits(initial);
+        await window.storage.set('outfits-data-v2', JSON.stringify(initial));
+      }
+
+      if (linksResult) {
+        setInspirationLinks(JSON.parse(linksResult.value));
+      }
+    } catch (error) {
+      console.error('Ошибка:', error);
+      setWardrobeItems(loadInitialWardrobe());
+      setShoppingList(loadInitialShopping());
+      setOutfits(loadInitialOutfits());
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadInitialWardrobe = () => ({
+    suits: [
+      { id: 1, name: 'Костюм черный однотонный', status: 'есть', priority: 'высокий', tags: 'офис, формальный', notes: '' },
+      { id: 2, name: 'Костюм синий в полоску', status: 'есть', priority: 'средний', tags: 'офис', notes: '' },
+      { id: 3, name: 'Костюм коричневый кэжуал', status: 'есть', priority: 'средний', tags: 'casual', notes: '' },
+      { id: 4, name: 'Костюм темный в клетку', status: 'есть', priority: 'средний', tags: 'офис', notes: '' },
+      { id: 5, name: 'Костюм темно-синий однотонный', status: 'нужен', priority: 'критичный', tags: 'судейство', notes: '' }
+    ],
+    shirts: [
+      { id: 6, name: 'Рубашки белые', count: 2, status: 'есть', priority: 'средний', tags: 'базовый', notes: '' },
+      { id: 7, name: 'Рубашки синие', count: 3, status: 'есть', priority: 'низкий', tags: 'базовый', notes: '' },
+      { id: 8, name: 'Рубашки черные', count: 2, status: 'есть', priority: 'низкий', tags: 'базовый', notes: '' },
+      { id: 9, name: 'Рубашка бежевая', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
+      { id: 10, name: 'Рубашка темно-серая с узором', status: 'есть', priority: 'низкий', tags: 'офис', notes: '' },
+      { id: 11, name: 'Рубашки серые летние', count: 2, status: 'есть', priority: 'низкий', tags: 'лето', notes: '' }
+    ],
+    knitwear: [
+      { id: 12, name: 'Водолазка белая', status: 'есть', priority: 'низкий', tags: 'зима, базовый', notes: '' },
+      { id: 13, name: 'Водолазка синяя (новая)', status: 'есть', priority: 'низкий', tags: 'зима', notes: '' },
+      { id: 14, name: 'Водолазка черная', status: 'нужна', priority: 'высокий', tags: 'зима', notes: '' },
+      { id: 15, name: 'Жилетка синяя шерсть 100%', status: 'есть', priority: 'низкий', tags: 'тренировки', notes: '' },
+      { id: 16, name: 'Свитер серый', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
+      { id: 17, name: 'Свитер голубой', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
+      { id: 18, name: 'Свитер синий', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
+      { id: 19, name: 'Свитер белый в полоску', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
+      { id: 20, name: 'Свитер коричневый в полоску', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
+      { id: 21, name: 'Свитер черно-белый', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
+      { id: 22, name: 'Толстовка бордовая', status: 'есть', priority: 'низкий', tags: 'спорт', notes: '' },
+      { id: 23, name: 'Толстовка черная', status: 'есть', priority: 'низкий', tags: 'спорт', notes: '' }
+    ],
+    polo: [
+      { id: 24, name: 'Поло бордовое Ralph Lauren', status: 'есть', priority: 'низкий', signature: true, tags: 'лето', notes: '' },
+      { id: 25, name: 'Поло синее Ralph Lauren', count: 2, status: 'есть', priority: 'низкий', tags: 'лето', notes: '' },
+      { id: 26, name: 'Поло коричневое', status: 'есть', priority: 'низкий', tags: 'лето', notes: '' },
+      { id: 27, name: 'Поло серое', status: 'есть', priority: 'низкий', tags: 'лето', notes: '' },
+      { id: 28, name: 'Поло черное', status: 'есть', priority: 'низкий', tags: 'лето', notes: '' },
+      { id: 29, name: 'Поло темно-синее', status: 'есть', priority: 'низкий', tags: 'лето', notes: '' }
+    ],
+    pants: [
+      { id: 30, name: 'Брюки серые шерстяные', status: 'есть', priority: 'низкий', tags: 'офис', notes: '' },
+      { id: 31, name: 'Брюки темно-синие', status: 'есть', priority: 'низкий', tags: 'офис', notes: '' },
+      { id: 32, name: 'Брюки серые классические', status: 'есть', priority: 'низкий', tags: 'офис', notes: '' },
+      { id: 33, name: 'Брюки черные', status: 'есть', priority: 'низкий', tags: 'офис', notes: '' },
+      { id: 34, name: 'Джинсы темно-синие', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
+      { id: 35, name: 'Джинсы серые', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
+      { id: 36, name: 'Джинсы светло-синие', count: 2, status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
+      { id: 37, name: 'Чиносы табачные', status: 'нужны', priority: 'высокий', tags: 'casual', notes: '' },
+      { id: 38, name: 'Чиносы оливковые', status: 'нужны', priority: 'высокий', tags: 'casual', notes: '' },
+      { id: 39, name: 'Чиносы бежевые', status: 'нужны', priority: 'средний', tags: 'casual', notes: '' }
+    ],
+    shoes: [
+      { id: 40, name: 'Челси черные', status: 'есть', priority: 'низкий', tags: 'универсальные', notes: '' },
+      { id: 41, name: 'Ботинки черные высокие', status: 'есть', priority: 'низкий', tags: 'зима', notes: '' },
+      { id: 42, name: 'Ботинки утепленные', status: 'есть', priority: 'низкий', tags: 'зима', notes: '' },
+      { id: 43, name: 'Мокасины серые', status: 'есть', priority: 'низкий', tags: 'лето', notes: '' },
+      { id: 44, name: 'Кроссовки черные', count: 3, status: 'есть', priority: 'низкий', tags: 'спорт', notes: '' },
+      { id: 45, name: 'Туфли черные классические', status: 'нужны', priority: 'критичный', tags: 'формальный', notes: '' },
+      { id: 46, name: 'Туфли burgundy', status: 'нужны', priority: 'критичный', signature: true, tags: 'изюминка', notes: '' },
+      { id: 47, name: 'Кроссовки белые', status: 'нужны', priority: 'высокий', tags: 'casual', notes: '' }
+    ],
+    accessories: [
+      { id: 48, name: 'Галстук черный', status: 'есть', priority: 'низкий', tags: 'формальный', notes: '' },
+      { id: 49, name: 'Галстук бордовый', status: 'есть', priority: 'низкий', signature: true, tags: 'изюминка', notes: '' },
+      { id: 50, name: 'Галстук синий', status: 'есть', priority: 'низкий', tags: 'формальный', notes: '' },
+      { id: 51, name: 'Нагрудные платки', status: 'нужны', priority: 'средний', tags: 'аксессуары', notes: '' },
+      { id: 52, name: 'Запонки', status: 'нужны', priority: 'средний', tags: 'аксессуары', notes: '' },
+      { id: 53, name: 'Шарф кашемир', status: 'нужен', priority: 'средний', tags: 'зима', notes: '' },
+      { id: 54, name: 'Перчатки кожаные', status: 'нужны', priority: 'средний', tags: 'зима', notes: '' }
+    ]
+  });
+
+  const loadInitialShopping = () => [
+    { id: 1, item: 'Костюм темно-синий', priority: 'КРИТИЧНО', price: '€400-700', category: 'Судейство', plannedDate: '', purchased: false },
+    { id: 2, item: 'Туфли черные', priority: 'КРИТИЧНО', price: '€200-400', category: 'Судейство', plannedDate: '', purchased: false },
+    { id: 3, item: 'Туфли burgundy', priority: 'КРИТИЧНО', price: '€200-300', category: 'Изюминка', plannedDate: '', purchased: false }
+  ];
+
+  const loadInitialOutfits = () => [
+    {
+      id: 1,
+      name: 'Элегантный тренер',
+      category: 'Тренировки',
+      season: 'зима',
+      items: ['Водолазка синяя', 'Жилетка синяя', 'Брюки серые', 'Челси черные'],
+      complete: true
+    }
+  ];
+
+  const saveData = async (key, data, setter) => {
+    try {
+      await window.storage.set(key, JSON.stringify(data));
+      setter(data);
+    } catch (e) {
+      console.error('Ошибка сохранения:', e);
+    }
+  };
+
+  const addWardrobeItem = async () => {
+    if (!newItem.name) return;
+    const category = newItem.category;
+    const item = { ...newItem, id: Date.now() };
+    const updated = {
+      ...wardrobeItems,
+      [category]: [...(wardrobeItems[category] || []), item]
+    };
+    await saveData('wardrobe-data-v2', updated, setWardrobeItems);
+    setNewItem({ name: '', category: 'suits', status: 'есть', priority: 'низкий', tags: '', notes: '', photo: '' });
+  };
+
+  const deleteWardrobeItem = async (category, itemId) => {
+    const updated = {
+      ...wardrobeItems,
+      [category]: wardrobeItems[category].filter(item => item.id !== itemId)
+    };
+    await saveData('wardrobe-data-v2', updated, setWardrobeItems);
+  };
+
+  const updateWardrobeItem = async (category, itemId, updates) => {
+    const updated = {
+      ...wardrobeItems,
+      [category]: wardrobeItems[category].map(item =>
+        item.id === itemId ? { ...item, ...updates } : item
+      )
+    };
+    await saveData('wardrobe-data-v2', updated, setWardrobeItems);
+    setEditingItem(null);
+  };
+
+  const addShoppingItem = async (item) => {
+    const updated = [...shoppingList, { ...item, id: Date.now(), purchased: false }];
+    await saveData('shopping-data-v2', updated, setShoppingList);
+  };
+
+  const removeShoppingItem = async (id) => {
+    const updated = shoppingList.filter(item => item.id !== id);
+    await saveData('shopping-data-v2', updated, setShoppingList);
+  };
+
+  const togglePurchased = async (id) => {
+    const updated = shoppingList.map(item =>
+      item.id === id ? { ...item, purchased: !item.purchased, purchasedDate: !item.purchased ? new Date().toISOString().split('T')[0] : null } : item
+    );
+    await saveData('shopping-data-v2', updated, setShoppingList);
+  };
+
+  const addOutfit = async (outfit) => {
+    const updated = [...outfits, { ...outfit, id: Date.now() }];
+    await saveData('outfits-data-v2', updated, setOutfits);
+  };
+
+  const deleteOutfit = async (id) => {
+    const updated = outfits.filter(o => o.id !== id);
+    await saveData('outfits-data-v2', updated, setOutfits);
+  };
+
+  const addLink = async (link) => {
+    const updated = [...inspirationLinks, { id: Date.now(), url: link }];
+    await saveData('inspiration-data-v2', updated, setInspirationLinks);
+  };
+
+  const removeLink = async (id) => {
+    const updated = inspirationLinks.filter(l => l.id !== id);
+    await saveData('inspiration-data-v2', updated, setInspirationLinks);
+  };
+
+  const handlePhotoUpload = (e, itemId, category) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const photoData = reader.result;
+        if (itemId) {
+          // Обновляем существующую вещь
+          updateWardrobeItem(category, itemId, { photo: photoData });
+        } else {
+          // Добавляем к новой вещи
+          setNewItem({...newItem, photo: photoData});
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = (itemId, category) => {
+    if (itemId) {
+      updateWardrobeItem(category, itemId, { photo: '' });
+    } else {
+      setNewItem({...newItem, photo: ''});
+    }
+  };
+
+  const getStats = () => {
+    const all = Object.values(wardrobeItems).flat();
+    const owned = all.filter(i => i.status === 'есть').length;
+    const needed = all.filter(i => i.status !== 'есть').length;
+    const critical = all.filter(i => i.priority === 'критичный').length;
+    const total = all.length;
+    const completion = total > 0 ? Math.round((owned / total) * 100) : 0;
+    const shoppingTotal = shoppingList.reduce((sum, item) => {
+      const match = item.price?.match(/€(\d+)/);
+      return sum + (match ? parseInt(match[1]) : 0);
+    }, 0);
+    return { total, owned, needed, critical, completion, shoppingTotal };
+  };
+
+  const getAnalytics = () => {
+    const all = Object.values(wardrobeItems).flat();
+    
+    // Статистика по категориям
+    const byCategory = Object.entries(wardrobeItems).map(([cat, items]) => ({
+      name: categories.find(c => c.id === cat)?.name || cat,
+      total: items.length,
+      owned: items.filter(i => i.status === 'есть').length,
+      needed: items.filter(i => i.status !== 'есть').length
+    }));
+
+    // Статистика по тегам
+    const tagCounts = {};
+    all.forEach(item => {
+      if (item.tags) {
+        item.tags.split(',').forEach(tag => {
+          const cleanTag = tag.trim();
+          tagCounts[cleanTag] = (tagCounts[cleanTag] || 0) + 1;
+        });
+      }
+    });
+    const topTags = Object.entries(tagCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([tag, count]) => ({ tag, count }));
+
+    // Статистика по приоритетам
+    const byPriority = {
+      критичный: all.filter(i => i.priority === 'критичный').length,
+      высокий: all.filter(i => i.priority === 'высокий').length,
+      средний: all.filter(i => i.priority === 'средний').length,
+      низкий: all.filter(i => i.priority === 'низкий').length
+    };
+
+    // История покупок
+    const purchaseHistory = shoppingList
+      .filter(i => i.purchased && i.purchasedDate)
+      .sort((a, b) => new Date(b.purchasedDate) - new Date(a.purchasedDate))
+      .slice(0, 10);
+
+    // Статистика по месяцам (последние 6 месяцев)
+    const monthlyStats = {};
+    purchaseHistory.forEach(item => {
+      if (item.purchasedDate) {
+        const month = item.purchasedDate.substring(0, 7); // YYYY-MM
+        if (!monthlyStats[month]) {
+          monthlyStats[month] = { count: 0, items: [] };
+        }
+        monthlyStats[month].count++;
+        monthlyStats[month].items.push(item.item);
+      }
+    });
+
+    // Рекомендации
+    const recommendations = [];
+    
+    // Проверяем базовые вещи
+    const basicTags = ['базовый', 'базовые'];
+    const basicItems = all.filter(i => basicTags.some(tag => i.tags?.includes(tag)));
+    const missingBasics = basicItems.filter(i => i.status !== 'есть').length;
+    if (missingBasics > 0) {
+      recommendations.push(`У вас не хватает ${missingBasics} базовых вещей`);
+    }
+
+    // Проверяем критичные покупки
+    const criticalNeeded = all.filter(i => i.priority === 'критичный' && i.status !== 'есть').length;
+    if (criticalNeeded > 0) {
+      recommendations.push(`${criticalNeeded} критичных покупок требуют внимания`);
+    }
+
+    // Проверяем незавершенные образы
+    const incompleteOutfits = outfits.filter(o => !checkOutfit(o).complete).length;
+    if (incompleteOutfits > 0) {
+      recommendations.push(`${incompleteOutfits} образов не готовы к использованию`);
+    }
+
+    return {
+      byCategory,
+      topTags,
+      byPriority,
+      purchaseHistory,
+      monthlyStats,
+      recommendations
+    };
+  };
+
+  const checkOutfit = (outfit) => {
+    const all = Object.values(wardrobeItems).flat();
+    const missing = outfit.items.filter(outfitItem => 
+      !all.some(w => w.name.toLowerCase().includes(outfitItem.toLowerCase()) && w.status === 'есть')
+    );
+    return { complete: missing.length === 0, missing };
+  };
+
+  const exportText = (data, filename) => {
+    const blob = new Blob([data], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+  };
+
+  const exportShopping = () => {
+    const text = shoppingList.map(i => `${i.item} - ${i.priority} - ${i.price} - ${i.category}`).join('\n');
+    exportText(text, 'shopping-list.txt');
+  };
+
+  const exportWardrobe = () => {
+    const text = Object.entries(wardrobeItems).map(([cat, items]) =>
+      `\n=== ${cat.toUpperCase()} ===\n` + items.map(i => `${i.name} - ${i.status} - ${i.priority}`).join('\n')
+    ).join('\n');
+    exportText(text, 'wardrobe.txt');
+  };
+
+  const categories = [
+    { id: 'all', name: 'Все' },
+    { id: 'suits', name: 'Костюмы' },
+    { id: 'shirts', name: 'Рубашки' },
+    { id: 'knitwear', name: 'Трикотаж' },
+    { id: 'polo', name: 'Поло' },
+    { id: 'pants', name: 'Брюки' },
+    { id: 'shoes', name: 'Обувь' },
+    { id: 'accessories', name: 'Аксессуары' }
+  ];
+
+  const getPriorityColor = (p) => {
+    if (p === 'критичный' || p === 'КРИТИЧНО') return 'bg-red-900 text-red-100';
+    if (p === 'высокий' || p === 'ВЫСОКИЙ') return 'bg-orange-900 text-orange-100';
+    if (p === 'средний' || p === 'СРЕДНИЙ') return 'bg-yellow-900 text-yellow-100';
+    return 'bg-gray-700 text-gray-300';
+  };
+
+  const getStatusBadge = (s) => {
+    if (s === 'нужен' || s === 'нужна' || s === 'нужны') 
+      return <span className="px-2 py-1 bg-red-900 text-red-100 rounded text-xs">Нужно</span>;
+    return <span className="px-2 py-1 bg-green-900 text-green-100 rounded text-xs">Есть</span>;
+  };
+
+  if (isLoading) return (
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="text-white text-xl">Загрузка...</div>
+    </div>
+  );
+
+  const stats = getStats();
+  const analytics = getAnalytics();
+
+  const renderAnalytics = () => {
+    return (
+      <div className="space-y-4">
+        {/* Заголовок */}
+        <div className="bg-gradient-to-r from-purple-900 to-blue-900 rounded-lg p-4">
+          <h2 className="text-white text-xl font-bold mb-1">Аналитика гардероба</h2>
+          <p className="text-purple-200 text-sm">Детальная статистика и рекомендации</p>
+        </div>
+
+        {/* Рекомендации */}
+        {analytics.recommendations.length > 0 && (
+          <div className="bg-orange-900 bg-opacity-20 border border-orange-900 rounded-lg p-4">
+            <h3 className="text-orange-300 font-bold mb-3 flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Рекомендации
+            </h3>
+            <div className="space-y-2">
+              {analytics.recommendations.map((rec, idx) => (
+                <div key={idx} className="flex items-start gap-2 text-orange-200 text-sm">
+                  <span className="text-orange-400 mt-1">•</span>
+                  <span>{rec}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Статистика по категориям */}
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            По категориям
+          </h3>
+          <div className="space-y-3">
+            {analytics.byCategory.map((cat, idx) => (
+              <div key={idx}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-300">{cat.name}</span>
+                  <span className="text-gray-400">{cat.owned}/{cat.total}</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-green-500 h-2 rounded-full transition-all"
+                    style={{ width: `${cat.total > 0 ? (cat.owned / cat.total) * 100 : 0}%` }}
+                  />
+                </div>
+                {cat.needed > 0 && (
+                  <div className="text-xs text-red-400 mt-1">Нужно купить: {cat.needed}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Топ тегов */}
+        {analytics.topTags.length > 0 && (
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+              <Tag className="w-5 h-5" />
+              Популярные теги
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {analytics.topTags.map((tag, idx) => (
+                <div key={idx} className="px-3 py-1 bg-blue-900 text-blue-200 rounded-full text-sm flex items-center gap-2">
+                  <span>{tag.tag}</span>
+                  <span className="bg-blue-800 px-2 py-0.5 rounded-full text-xs">{tag.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Статистика по приоритетам */}
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+            <PieChart className="w-5 h-5" />
+            По приоритетам
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-red-900 bg-opacity-30 border border-red-900 rounded p-3">
+              <div className="text-red-300 text-xs mb-1">Критичный</div>
+              <div className="text-red-100 text-2xl font-bold">{analytics.byPriority.критичный}</div>
+            </div>
+            <div className="bg-orange-900 bg-opacity-30 border border-orange-900 rounded p-3">
+              <div className="text-orange-300 text-xs mb-1">Высокий</div>
+              <div className="text-orange-100 text-2xl font-bold">{analytics.byPriority.высокий}</div>
+            </div>
+            <div className="bg-yellow-900 bg-opacity-30 border border-yellow-900 rounded p-3">
+              <div className="text-yellow-300 text-xs mb-1">Средний</div>
+              <div className="text-yellow-100 text-2xl font-bold">{analytics.byPriority.средний}</div>
+            </div>
+            <div className="bg-gray-700 bg-opacity-30 border border-gray-600 rounded p-3">
+              <div className="text-gray-300 text-xs mb-1">Низкий</div>
+              <div className="text-gray-100 text-2xl font-bold">{analytics.byPriority.низкий}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* История покупок */}
+        {analytics.purchaseHistory.length > 0 && (
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Последние покупки
+            </h3>
+            <div className="space-y-2">
+              {analytics.purchaseHistory.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-700 pb-2">
+                  <span className="text-gray-300">{item.item}</span>
+                  <span className="text-gray-500">{item.purchasedDate}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Статистика по месяцам */}
+        {Object.keys(analytics.monthlyStats).length > 0 && (
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Покупки по месяцам
+            </h3>
+            <div className="space-y-3">
+              {Object.entries(analytics.monthlyStats)
+                .sort((a, b) => b[0].localeCompare(a[0]))
+                .map(([month, data], idx) => (
+                  <div key={idx} className="bg-gray-700 rounded p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-white font-medium">{month}</span>
+                      <span className="text-green-400 font-bold">{data.count} покупок</span>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {data.items.join(', ')}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Кнопка экспорта отчета */}
+        <button
+          onClick={() => {
+            const report = `
+=== ОТЧЕТ ПО ГАРДЕРОБУ ===
+Дата: ${new Date().toLocaleDateString()}
+
+ОБЩАЯ СТАТИСТИКА:
+- Всего вещей: ${stats.total}
+- Есть в наличии: ${stats.owned}
+- Нужно купить: ${stats.needed}
+- Готовность: ${stats.completion}%
+
+СТАТИСТИКА ПО КАТЕГОРИЯМ:
+${analytics.byCategory.map(c => `- ${c.name}: ${c.owned}/${c.total} (нужно: ${c.needed})`).join('\n')}
+
+ПРИОРИТЕТЫ:
+- Критичных: ${analytics.byPriority.критичный}
+- Высоких: ${analytics.byPriority.высокий}
+- Средних: ${analytics.byPriority.средний}
+- Низких: ${analytics.byPriority.низкий}
+
+РЕКОМЕНДАЦИИ:
+${analytics.recommendations.map(r => `- ${r}`).join('\n')}
+`;
+            exportText(report, 'wardrobe-report.txt');
+          }}
+          className="w-full px-4 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded flex items-center justify-center gap-2 font-medium"
+        >
+          <Download className="w-5 h-5" />
+          Скачать полный отчет
+        </button>
+      </div>
+    );
+  };
+
+  const renderWardrobe = () => {
+    let items = selectedCategory === 'all' 
+      ? Object.entries(wardrobeItems).flatMap(([cat, its]) => its.map(i => ({...i, category: cat})))
+      : wardrobeItems[selectedCategory] || [];
+
+    if (searchQuery) {
+      items = items.filter(i => 
+        i.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        i.tags?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (filterStatus === 'owned') items = items.filter(i => i.status === 'есть');
+    if (filterStatus === 'needed') items = items.filter(i => i.status !== 'есть');
+    if (filterPriority !== 'all') items = items.filter(i => i.priority === filterPriority);
+
+    return (
+      <div className="space-y-4">
+        {showStats && (
+          <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-lg p-4 border border-gray-600">
+            <div className="flex justify-between mb-3">
+              <h3 className="text-white font-bold flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Статистика
+              </h3>
+              <button onClick={() => setShowStats(false)} className="text-gray-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="bg-gray-900 rounded p-3">
+                <div className="text-gray-400 text-xs">Всего вещей</div>
+                <div className="text-white text-2xl font-bold">{stats.total}</div>
+              </div>
+              <div className="bg-gray-900 rounded p-3">
+                <div className="text-gray-400 text-xs">Есть</div>
+                <div className="text-green-400 text-2xl font-bold">{stats.owned}</div>
+              </div>
+              <div className="bg-gray-900 rounded p-3">
+                <div className="text-gray-400 text-xs">Нужно купить</div>
+                <div className="text-red-400 text-2xl font-bold">{stats.needed}</div>
+              </div>
+              <div className="bg-gray-900 rounded p-3">
+                <div className="text-gray-400 text-xs">Критичных</div>
+                <div className="text-red-500 text-2xl font-bold">{stats.critical}</div>
+              </div>
+              <div className="bg-gray-900 rounded p-3">
+                <div className="text-gray-400 text-xs">Готовность</div>
+                <div className="text-blue-400 text-2xl font-bold">{stats.completion}%</div>
+              </div>
+              <div className="bg-gray-900 rounded p-3">
+                <div className="text-gray-400 text-xs">В шопинг-листе</div>
+                <div className="text-orange-400 text-2xl font-bold">{shoppingList.filter(i => !i.purchased).length}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 space-y-3">
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Поиск..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 bg-gray-900 text-white rounded border border-gray-700"
+              />
+            </div>
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="px-3 bg-gray-700 rounded">
+                <X className="w-4 h-4 text-white" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700 text-sm">
+              <option value="all">Все статусы</option>
+              <option value="owned">Только есть</option>
+              <option value="needed">Только нужно</option>
+            </select>
+
+            <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}
+              className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700 text-sm">
+              <option value="all">Все приоритеты</option>
+              <option value="критичный">Критичный</option>
+              <option value="высокий">Высокий</option>
+              <option value="средний">Средний</option>
+              <option value="низкий">Низкий</option>
+            </select>
+
+            <div className="flex gap-1 ml-auto">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded ${viewMode === 'list' ? 'bg-red-900 text-white' : 'bg-gray-700 text-gray-300'}`}
+                title="Список"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded ${viewMode === 'grid' ? 'bg-red-900 text-white' : 'bg-gray-700 text-gray-300'}`}
+                title="Сетка"
+              >
+                <Grid className="w-4 h-4" />
+              </button>
+            </div>
+
+            <button onClick={exportWardrobe}
+              className="px-3 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded text-sm flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Экспорт
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {categories.map(cat => (
+            <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
+              className={`px-4 py-2 rounded-lg whitespace-nowrap transition ${
+                selectedCategory === cat.id ? 'bg-red-900 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              }`}>
+              {cat.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <h3 className="text-white font-medium mb-3">Добавить вещь</h3>
+          <div className="space-y-3">
+            <input type="text" placeholder="Название" value={newItem.name}
+              onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+            
+            <div className="grid grid-cols-3 gap-2">
+              <select value={newItem.category} onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
+                {categories.filter(c => c.id !== 'all').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <select value={newItem.status} onChange={(e) => setNewItem({...newItem, status: e.target.value})}
+                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
+                <option value="есть">Есть</option>
+                <option value="нужен">Нужен</option>
+              </select>
+              <select value={newItem.priority} onChange={(e) => setNewItem({...newItem, priority: e.target.value})}
+                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
+                <option value="низкий">Низкий</option>
+                <option value="средний">Средний</option>
+                <option value="высокий">Высокий</option>
+                <option value="критичный">Критичный</option>
+              </select>
+            </div>
+            
+            <input type="text" placeholder="Теги (через запятую)" value={newItem.tags}
+              onChange={(e) => setNewItem({...newItem, tags: e.target.value})}
+              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+            
+            <textarea placeholder="Заметки" value={newItem.notes} rows="2"
+              onChange={(e) => setNewItem({...newItem, notes: e.target.value})}
+              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+
+            <div className="space-y-2">
+              <div className="text-gray-400 text-sm">Фото вещи</div>
+              {newItem.photo ? (
+                <div className="relative">
+                  <img src={newItem.photo} alt="Preview" className="w-full h-40 object-cover rounded border border-gray-700" />
+                  <button
+                    onClick={() => removePhoto()}
+                    className="absolute top-2 right-2 p-1 bg-red-900 hover:bg-red-800 rounded"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded cursor-pointer border-2 border-dashed border-gray-600">
+                  <Camera className="w-5 h-5" />
+                  <span>Загрузить фото</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handlePhotoUpload(e)}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+
+            <button onClick={addWardrobeItem}
+              className="w-full px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded transition">
+              Добавить
+            </button>
+          </div>
+        </div>
+
+        <div className={viewMode === 'list' ? 'grid gap-3' : 'hidden'}>
+          {items.map(item => (
+            <div key={item.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              {editingItem === item.id ? (
+                <div className="space-y-3">
+                  <input type="text" value={item.name}
+                    onChange={(e) => {
+                      const u = {...wardrobeItems, [item.category || selectedCategory]: 
+                        wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, name: e.target.value} : i)};
+                      setWardrobeItems(u);
+                    }}
+                    className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <select value={item.status}
+                      onChange={(e) => {
+                        const u = {...wardrobeItems, [item.category || selectedCategory]: 
+                          wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, status: e.target.value} : i)};
+                        setWardrobeItems(u);
+                      }}
+                      className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
+                      <option value="есть">Есть</option>
+                      <option value="нужен">Нужен</option>
+                      <option value="нужна">Нужна</option>
+                      <option value="нужны">Нужны</option>
+                    </select>
+                    <select value={item.priority}
+                      onChange={(e) => {
+                        const u = {...wardrobeItems, [item.category || selectedCategory]: 
+                          wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, priority: e.target.value} : i)};
+                        setWardrobeItems(u);
+                      }}
+                      className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
+                      <option value="низкий">Низкий</option>
+                      <option value="средний">Средний</option>
+                      <option value="высокий">Высокий</option>
+                      <option value="критичный">Критичный</option>
+                    </select>
+                  </div>
+
+                  <input type="text" placeholder="Теги" value={item.tags || ''}
+                    onChange={(e) => {
+                      const u = {...wardrobeItems, [item.category || selectedCategory]: 
+                        wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, tags: e.target.value} : i)};
+                      setWardrobeItems(u);
+                    }}
+                    className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+
+                  <textarea placeholder="Заметки" value={item.notes || ''} rows="2"
+                    onChange={(e) => {
+                      const u = {...wardrobeItems, [item.category || selectedCategory]: 
+                        wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, notes: e.target.value} : i)};
+                      setWardrobeItems(u);
+                    }}
+                    className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+
+                  <div className="space-y-2">
+                    <div className="text-gray-400 text-sm">Фото</div>
+                    {item.photo ? (
+                      <div className="relative">
+                        <img src={item.photo} alt={item.name} className="w-full h-40 object-cover rounded" />
+                        <button
+                          onClick={() => {
+                            const u = {...wardrobeItems, [item.category || selectedCategory]: 
+                              wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, photo: ''} : i)};
+                            setWardrobeItems(u);
+                          }}
+                          className="absolute top-2 right-2 p-1 bg-red-900 hover:bg-red-800 rounded"
+                        >
+                          <X className="w-4 h-4 text-white" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded cursor-pointer">
+                        <Camera className="w-5 h-5" />
+                        <span>Загрузить фото</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoUpload(e, item.id, item.category || selectedCategory)}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button onClick={() => updateWardrobeItem(item.category || selectedCategory, item.id, item)}
+                      className="flex-1 px-4 py-2 bg-green-900 hover:bg-green-800 text-white rounded flex items-center justify-center gap-2">
+                      <Save className="w-4 h-4" />
+                      Сохранить
+                    </button>
+                    <button onClick={() => setEditingItem(null)}
+                      className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded">
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-4">
+                  {item.photo && (
+                    <img src={item.photo} alt={item.name} className="w-24 h-24 object-cover rounded flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-white font-medium">{item.name}</h3>
+                      {item.count && <span className="text-gray-400 text-sm">({item.count} шт)</span>}
+                      {item.signature && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      {getStatusBadge(item.status)}
+                      <span className={`px-2 py-1 rounded text-xs ${getPriorityColor(item.priority)}`}>
+                        {item.priority}
+                      </span>
+                    </div>
+                    {item.tags && (
+                      <div className="flex items-center gap-1 text-xs text-gray-400 mb-1">
+                        <Tag className="w-3 h-3" />
+                        {item.tags}
+                      </div>
+                    )}
+                    {item.notes && (
+                      <div className="text-xs text-gray-400 italic">{item.notes}</div>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => setEditingItem(item.id)} className="p-2 hover:bg-blue-900 rounded">
+                      <Edit2 className="w-4 h-4 text-gray-400 hover:text-blue-400" />
+                    </button>
+                    <button onClick={() => deleteWardrobeItem(item.category || selectedCategory, item.id)}
+                      className="p-2 hover:bg-red-900 rounded">
+                      <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-400" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {viewMode === 'grid' && !editingItem && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {items.map(item => (
+              <div key={item.id} className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-red-900 transition">
+                <div className="relative">
+                  {item.photo ? (
+                    <img src={item.photo} alt={item.name} className="w-full h-48 object-cover" />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-700 flex items-center justify-center">
+                      <Image className="w-12 h-12 text-gray-600" />
+                    </div>
+                  )}
+                  {item.signature && (
+                    <div className="absolute top-2 right-2 bg-yellow-500 rounded-full p-1">
+                      <Star className="w-4 h-4 text-yellow-900 fill-yellow-900" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-2 left-2 right-2 flex gap-1">
+                    {getStatusBadge(item.status)}
+                  </div>
+                </div>
+                <div className="p-3">
+                  <h3 className="text-white font-medium text-sm mb-2 line-clamp-2">{item.name}</h3>
+                  <div className="flex items-center justify-between">
+                    <span className={`px-2 py-1 rounded text-xs ${getPriorityColor(item.priority)}`}>
+                      {item.priority}
+                    </span>
+                    <div className="flex gap-1">
+                      <button onClick={() => setEditingItem(item.id)} className="p-1 hover:bg-blue-900 rounded">
+                        <Edit2 className="w-3 h-3 text-gray-400" />
+                      </button>
+                      <button onClick={() => deleteWardrobeItem(item.category || selectedCategory, item.id)}
+                        className="p-1 hover:bg-red-900 rounded">
+                        <Trash2 className="w-3 h-3 text-gray-400" />
+                      </button>
+                    </div>
+                  </div>
+                  {item.tags && (
+                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
+                      <Tag className="w-3 h-3" />
+                      <span className="line-clamp-1">{item.tags}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {items.length === 0 && (
+          <div className="text-center text-gray-400 py-8">
+            Ничего не найдено. Попробуйте изменить фильтры.
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderShoppingList = () => {
+    const activePurchases = shoppingList.filter(i => !i.purchased);
+    const completedPurchases = shoppingList.filter(i => i.purchased);
+
+    return (
+      <div className="space-y-4">
+        <div className="bg-gradient-to-r from-yellow-900 to-orange-900 rounded-lg p-4">
+          <div className="text-white font-bold text-lg mb-1">Бюджет на покупки</div>
+          <div className="text-yellow-200 text-3xl font-bold">€{stats.shoppingTotal}+</div>
+          <div className="text-yellow-200 text-sm mt-1">Активных покупок: {activePurchases.length}</div>
+        </div>
+
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <h3 className="text-white font-medium mb-3">Добавить покупку</h3>
+          <div className="space-y-3">
+            <input type="text" placeholder="Что купить" value={newShop.item}
+              onChange={(e) => setNewShop({...newShop, item: e.target.value})}
+              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+            
+            <div className="grid grid-cols-2 gap-2">
+              <select value={newShop.priority} onChange={(e) => setNewShop({...newShop, priority: e.target.value})}
+                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
+                <option value="КРИТИЧНО">Критично</option>
+                <option value="ВЫСОКИЙ">Высокий</option>
+                <option value="СРЕДНИЙ">Средний</option>
+                <option value="НИЗКИЙ">Низкий</option>
+              </select>
+              <input type="text" placeholder="Цена (€100-200)" value={newShop.price}
+                onChange={(e) => setNewShop({...newShop, price: e.target.value})}
+                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <input type="text" placeholder="Категория" value={newShop.category}
+                onChange={(e) => setNewShop({...newShop, category: e.target.value})}
+                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+              <input type="date" value={newShop.plannedDate}
+                onChange={(e) => setNewShop({...newShop, plannedDate: e.target.value})}
+                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+            </div>
+
+            <button onClick={() => {
+              if (newShop.item) {
+                addShoppingItem(newShop);
+                setNewShop({ item: '', priority: 'СРЕДНИЙ', price: '', category: '', plannedDate: '' });
+              }
+            }}
+              className="w-full px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded">
+              Добавить
+            </button>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button onClick={exportShopping}
+            className="px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded flex items-center gap-2">
+            <Download className="w-4 h-4" />
+            Экспорт списка
+          </button>
+        </div>
+
+        <div>
+          <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5" />
+            Активные покупки ({activePurchases.length})
+          </h3>
+          <div className="space-y-3">
+            {activePurchases.map(item => (
+              <div key={item.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <button onClick={() => togglePurchased(item.id)}
+                        className="w-6 h-6 rounded border-2 border-gray-600 hover:border-green-500 flex items-center justify-center">
+                        {item.purchased && <Check className="w-4 h-4 text-green-500" />}
+                      </button>
+                      <h3 className="text-white font-medium">{item.item}</h3>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap ml-8">
+                      <span className={`px-2 py-1 rounded text-xs ${getPriorityColor(item.priority)}`}>
+                        {item.priority}
+                      </span>
+                      {item.category && (
+                        <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs">{item.category}</span>
+                      )}
+                      {item.price && (
+                        <span className="text-yellow-500 font-bold text-sm">{item.price}</span>
+                      )}
+                      {item.plannedDate && (
+                        <span className="text-blue-400 text-xs flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {item.plannedDate}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button onClick={() => removeShoppingItem(item.id)} className="p-2 hover:bg-red-900 rounded">
+                    <Trash2 className="w-4 h-4 text-gray-400" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {completedPurchases.length > 0 && (
+          <div>
+            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+              <Check className="w-5 h-5 text-green-500" />
+              Куплено ({completedPurchases.length})
+            </h3>
+            <div className="space-y-2">
+              {completedPurchases.map(item => (
+                <div key={item.id} className="bg-gray-800 rounded-lg p-3 border border-green-900 opacity-75">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span className="text-gray-300 line-through">{item.item}</span>
+                      {item.purchasedDate && (
+                        <span className="text-xs text-gray-500">({item.purchasedDate})</span>
+                      )}
+                    </div>
+                    <button onClick={() => removeShoppingItem(item.id)} className="p-1 hover:bg-red-900 rounded">
+                      <Trash2 className="w-3 h-3 text-gray-500" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderOutfits = () => {
+    const filteredOutfits = outfitFilter === 'all' ? outfits : outfits.filter(o => o.season === outfitFilter);
+
+    return (
+      <div className="space-y-4">
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <h3 className="text-white font-medium mb-3">Создать образ</h3>
+          <div className="space-y-3">
+            <input type="text" placeholder="Название образа" value={newOutfit.name}
+              onChange={(e) => setNewOutfit({...newOutfit, name: e.target.value})}
+              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+            
+            <div className="grid grid-cols-2 gap-2">
+              <input type="text" placeholder="Категория (Работа, Тренировки)" value={newOutfit.category}
+                onChange={(e) => setNewOutfit({...newOutfit, category: e.target.value})}
+                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+              <select value={newOutfit.season} onChange={(e) => setNewOutfit({...newOutfit, season: e.target.value})}
+                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
+                <option value="">Сезон</option>
+                <option value="лето">Лето</option>
+                <option value="зима">Зима</option>
+                <option value="весна">Весна</option>
+                <option value="осень">Осень</option>
+                <option value="всесезон">Всесезон</option>
+              </select>
+            </div>
+
+            <textarea placeholder="Вещи через запятую" value={newOutfit.items} rows="3"
+              onChange={(e) => setNewOutfit({...newOutfit, items: e.target.value})}
+              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+
+            <button onClick={() => {
+              if (newOutfit.name && newOutfit.items) {
+                const items = newOutfit.items.split(',').map(i => i.trim()).filter(i => i);
+                addOutfit({ ...newOutfit, items });
+                setNewOutfit({ name: '', category: '', season: '', items: '' });
+              }
+            }}
+              className="w-full px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded">
+              Создать образ
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {['all', 'лето', 'зима', 'весна', 'осень', 'всесезон'].map(s => (
+            <button key={s} onClick={() => setOutfitFilter(s)}
+              className={`px-4 py-2 rounded-lg whitespace-nowrap transition ${
+                outfitFilter === s ? 'bg-red-900 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              }`}>
+              {s === 'all' ? 'Все' : s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          {filteredOutfits.map(outfit => {
+            const check = checkOutfit(outfit);
+            return (
+              <div key={outfit.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <div className="flex justify-between mb-3">
+                  <div>
+                    <h3 className="text-white font-medium mb-1">{outfit.name}</h3>
+                    <div className="flex gap-2">
+                      {outfit.category && (
+                        <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs">{outfit.category}</span>
+                      )}
+                      {outfit.season && (
+                        <span className="px-2 py-1 bg-blue-900 text-blue-200 rounded text-xs">{outfit.season}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {check.complete ? (
+                      <span className="px-3 py-1 bg-green-900 text-green-100 rounded-full text-xs font-bold">
+                        ✓ Готов
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 bg-orange-900 text-orange-100 rounded-full text-xs font-bold">
+                        Не готов
+                      </span>
+                    )}
+                    <button onClick={() => deleteOutfit(outfit.id)} className="p-1 hover:bg-red-900 rounded">
+                      <Trash2 className="w-4 h-4 text-gray-400" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-gray-400 text-sm font-medium">Состав:</p>
+                  {outfit.items.map((item, idx) => {
+                    const missing = check.missing.includes(item);
+                    return (
+                      <div key={idx} className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${missing ? 'bg-red-500' : 'bg-green-500'}`} />
+                        <span className={`text-sm ${missing ? 'text-red-300' : 'text-gray-300'}`}>
+                          {item}
+                          {missing && ' (нужно купить)'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {check.missing.length > 0 && (
+                  <div className="mt-3 p-2 bg-red-900 bg-opacity-20 rounded border border-red-900">
+                    <p className="text-red-300 text-sm">
+                      Не хватает: {check.missing.join(', ')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderInspiration = () => {
+    return (
+      <div className="space-y-4">
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <h3 className="text-white font-medium mb-3">Добавить ссылку</h3>
+          <div className="flex gap-2">
+            <input type="url" placeholder="https://..." value={newLink}
+              onChange={(e) => setNewLink(e.target.value)}
+              className="flex-1 px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
+            <button onClick={() => {
+              if (newLink) {
+                addLink(newLink);
+                setNewLink('');
+              }
+            }}
+              className="px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded">
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {inspirationLinks.map(link => (
+          <div key={link.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-start justify-between">
+              <a href={link.url} target="_blank" rel="noopener noreferrer"
+                className="flex-1 text-red-400 hover:text-red-300 text-sm break-all">
+                {link.url}
+              </a>
+              <button onClick={() => removeLink(link.id)} className="p-2 hover:bg-red-900 rounded ml-2">
+                <Trash2 className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+          </div>
+        ))}
+
+        <div className="bg-gradient-to-r from-red-900 to-red-800 rounded-lg p-4">
+          <h4 className="text-white font-bold mb-2">Рекомендации:</h4>
+          <div className="space-y-2">
+            <a href="https://lookastic.com/men/black-turtleneck/how-to-wear-with/blazer" 
+               target="_blank" rel="noopener noreferrer"
+               className="block text-red-100 hover:text-white text-sm underline">
+              332 образа: водолазка + пиджак
+            </a>
+            <a href="https://lookastic.com/men/brown-suede-jacket/looks" 
+               target="_blank" rel="noopener noreferrer"
+               className="block text-red-100 hover:text-white text-sm underline">
+              641 образ: замшевая куртка
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white pb-20">
+      <div className="bg-gradient-to-r from-red-900 to-red-800 p-6">
+        <h1 className="text-2xl font-bold mb-2">Мой гардероб Pro</h1>
+        <div className="flex items-center gap-2 text-xs text-red-100">
+          <Save className="w-4 h-4" />
+          <span>Автосохранение • {stats.completion}% готовности</span>
+        </div>
+      </div>
+
+      <div className="border-b border-gray-800 bg-gray-900 sticky top-0 z-10">
+        <div className="flex overflow-x-auto">
+          {[
+            { id: 'wardrobe', name: 'Гардероб', icon: Package },
+            { id: 'shopping', name: 'Шопинг', icon: ShoppingBag },
+            { id: 'outfits', name: 'Образы', icon: Star },
+            { id: 'inspiration', name: 'Идеи', icon: Lightbulb }
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 min-w-fit px-6 py-4 text-sm font-medium transition ${
+                activeTab === tab.id
+                  ? 'text-red-500 border-b-2 border-red-500 bg-gray-800'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}>
+              <tab.icon className="w-5 h-5 mx-auto mb-1" />
+              {tab.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-4">
+        {activeTab === 'wardrobe' && renderWardrobe()}
+        {activeTab === 'shopping' && renderShoppingList()}
+        {activeTab === 'outfits' && renderOutfits()}
+        {activeTab === 'inspiration' && renderInspiration()}
+      </div>
+    </div>
+  );
+};
+
+export default WardrobeApp;
