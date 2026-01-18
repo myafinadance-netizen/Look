@@ -4,88 +4,69 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Мой гардероб — Веб</title>
-  <meta name="description" content="Гардероб — адаптивная версия для десктопа, планшета и телефона" />
+  <meta name="description" content="Гардероб — адаптивная версия для десктопа, планшета и телефон��" />
   <style>
-    /* --- Theme variables --- */
     :root{
       --bg-0:#06101a; --bg-1:#0b1220; --panel:#0f1720; --muted:#9CA3AF;
       --accent:#dc2626; --accent-2:#06b6d4; --card-border:rgba(255,255,255,0.04);
-      --glass:rgba(255,255,255,0.02); --radius:12px; --gap:16px; --max-width:1200px;
-      --safe-top:env(safe-area-inset-top,0px);
+      --radius:12px; --gap:16px; --max-width:1200px; --safe-top:env(safe-area-inset-top,0px);
     }
-
-    /* --- Base --- */
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-0),var(--bg-1));color:#e6eef6;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;-webkit-font-smoothing:antialiased}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-0),var(--bg-1));color:#e6eef6;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto; -webkit-font-smoothing:antialiased}
     .wrap{max-width:var(--max-width);margin:calc(20px + var(--safe-top)) auto 40px;padding:16px}
     header{display:flex;align-items:flex-start;gap:16px;margin-bottom:18px}
     h1{margin:0;font-size:20px}
     .subtitle{color:var(--muted);font-size:13px}
 
-    /* --- Tabs --- */
     .tabs{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}
     .tab{padding:10px 14px;border-radius:10px;background:transparent;border:1px solid transparent;color:var(--muted);cursor:pointer;font-size:14px}
     .tab.active{background:rgba(255,255,255,0.03);color:#fff;border-color:var(--card-border)}
 
-    /* --- Layout --- */
     .main-grid{display:grid;grid-template-columns:1fr 320px;gap:var(--gap);align-items:start}
     .panel{background:var(--panel);border-radius:var(--radius);padding:16px;border:1px solid var(--card-border);box-shadow:0 6px 24px rgba(0,0,0,0.35)}
     .card{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
 
-    /* --- Form --- */
-    .form-row{display:flex;gap:12px;align-items:center}
     input[type="text"], textarea, select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(0,0,0,0.35);color:#fff;font-size:14px}
     textarea{min-height:60px;resize:vertical}
     .btn{padding:10px 14px;border-radius:10px;border:0;cursor:pointer}
     .btn.primary{background:var(--accent);color:#fff}
     .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
 
-    /* --- Items list --- */
+    .controls{display:flex;gap:8px;align-items:center}
+    .view-toggle{display:flex;gap:8px;align-items:center;margin-left:8px}
+    .view-btn{padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);cursor:pointer;color:var(--muted)}
+    .view-btn.active{background:rgba(255,255,255,0.03);color:#fff;border-color:var(--card-border)}
+
+    /* list view */
     .items-list{display:flex;flex-direction:column;gap:12px;margin-top:12px}
     .item{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
-    .item-photo{width:72px;height:72px;background:#061214;border-radius:8px;flex-shrink:0;object-fit:cover}
-    .item .title{font-weight:700}
+    .item-photo{width:72px;height:72px;border-radius:8px;flex-shrink:0;object-fit:cover;background:#071018;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:28px}
+
+    /* grid view */
+    .grid-view .items-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+    .grid-card{background:var(--panel);border-radius:12px;overflow:hidden;border:1px solid var(--card-border);transition:transform .18s ease,box-shadow .18s ease}
+    .grid-card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.5)}
+    .card-photo{width:100%;height:180px;object-fit:cover;background:#071018;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:36px}
+    .card-body{padding:12px}
+    .grid-title{font-weight:700;margin-bottom:8px}
+    .grid-meta{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+
     .badge{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px}
     .badge.green{background:#064e3b;color:#bbf7d0}
     .badge.red{background:#7f1d1d;color:#ffd7d7}
     .muted{color:var(--muted);font-size:13px}
-
-    /* --- Sidebar analytics --- */
-    .sidebar .stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    .progress{height:10px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden}
-    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-2),#06b6d4)}
-
-    /* --- Utilities --- */
-    .flex{display:flex;gap:8px;align-items:center}
-    .ml-auto{margin-left:auto}
-    .small{font-size:13px;color:var(--muted)}
     .kpi{font-size:20px;font-weight:700}
 
-    /* --- Responsive: tablet / mobile --- */
-    @media (max-width:1000px){ :root{--max-width:1000px} .main-grid{grid-template-columns:1fr 300px} }
-    @media (max-width:900px){
-      .wrap{padding:12px;margin:12px auto 40px}
-      header{flex-direction:row;align-items:center;gap:10px}
-      h1{font-size:18px}
-      .tabs{flex-wrap:wrap}
-      .main-grid{grid-template-columns:1fr;gap:12px}
-      .sidebar{order:2}
-      .mobile-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-      .mobile-toolbar .btn{padding:8px 10px}
-    }
-    @media (max-width:480px){
-      :root{--max-width:740px;--gap:12px}
-      header{padding-top:var(--safe-top);padding-bottom:6px}
-      h1{font-size:16px}
-      .tab{padding:8px 10px;font-size:13px}
-      .item-photo{width:56px;height:56px}
-      .btn.primary{padding:10px 12px}
-      .card{padding:10px}
-      .form-row{flex-direction:column;align-items:stretch}
-      .form-row>*{width:100%}
-      .kpi{font-size:18px}
-    }
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000}
+    .modal{background:var(--panel);border-radius:10px;padding:16px;max-width:720px;width:96%;box-shadow:0 12px 40px rgba(0,0,0,0.6);border:1px solid var(--card-border)}
+    .photo-preview{position:relative;display:inline-block}
+    .del-photo{position:absolute;right:6px;top:6px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.06);color:#fff;border-radius:999px;padding:4px 6px;cursor:pointer}
 
-    /* Focus ring */
+    /* responsive */
+    @media (max-width:1000px){ .main-grid{grid-template-columns:1fr 300px} .grid-view .items-grid{grid-template-columns:repeat(3,1fr)} }
+    @media (max-width:700px){ .grid-view .items-grid{grid-template-columns:repeat(2,1fr)} .item-photo{width:56px;height:56px} .card-photo{height:140px} }
+    @media (max-width:480px){ .main-grid{grid-template-columns:1fr} .sidebar{order:2} .grid-view .items-grid{grid-template-columns:repeat(2,1fr)} .card-photo{height:120px} }
+
     :focus{outline:2px solid rgba(6,182,212,0.18);outline-offset:2px}
   </style>
 </head>
@@ -94,8 +75,9 @@
     <header>
       <div style="flex:1">
         <h1>Мой гардероб — Web</h1>
-        <div class="subtitle">Статический интерфейс для работы + аналитика. Можно разместить на GitHub Pages.</div>
-        <div class="tabs" role="tablist" aria-label="Разделы">
+        <div class="subtitle">Статический интерфейс. Фото в base64 сохраняются в localStorage.</div>
+
+        <div class="tabs" role="tablist" aria-label="Разделы" style="margin-top:12px">
           <button class="tab active" data-tab="wardrobe">Гардероб</button>
           <button class="tab" data-tab="shopping">Шопинг</button>
           <button class="tab" data-tab="outfits">Образы</button>
@@ -104,18 +86,20 @@
         </div>
       </div>
 
-      <div class="mobile-toolbar ml-auto" id="mobileToolbar" style="display:none">
-        <button class="btn ghost" id="toggleSidebarBtn" aria-expanded="true">☰ Статистика</button>
-        <button class="btn ghost" id="toggleAnalyticsBtn">📊 Аналитика</button>
+      <div class="controls" style="align-self:flex-start">
+        <div class="view-toggle" title="Режим просмотра">
+          <button id="listViewBtn" class="view-btn active" aria-pressed="true" title="Список">☰</button>
+          <button id="gridViewBtn" class="view-btn" aria-pressed="false" title="Сетка">▦</button>
+        </div>
       </div>
     </header>
 
     <main class="main-grid" id="mainGrid">
-      <!-- Left column contains multiple sections; we show/hide by tab -->
+      <!-- Left column: multiple sections shown/hidden by tabs -->
       <section>
-        <!-- Wardrobe section -->
+        <!-- Wardrobe -->
         <div id="wardrobeSection" class="panel">
-          <div class="flex" style="gap:12px;align-items:center;margin-bottom:12px">
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
             <input id="search" type="text" placeholder="Поиск по названию или тегам" style="flex:1" />
             <select id="filterStatus" class="small">
               <option value="all">Все статусы</option>
@@ -129,14 +113,13 @@
               <option value="средний">Средний</option>
               <option value="низкий">Низкий</option>
             </select>
-            <div class="ml-auto flex">
-              <button id="openAnalytics" class="btn ghost">Аналитика</button>
+            <div style="margin-left:auto;display:flex;gap:8px">
               <button id="exportBtn" class="btn ghost">Экспорт</button>
             </div>
           </div>
 
           <div class="card" style="margin-bottom:12px">
-            <h3 style="margin:0 0 8px 0">Добавить вещь <span class="small muted">Заполните поля и нажмите Добавить</span></h3>
+            <h3 style="margin:0 0 8px 0">Добавить вещь <span class="small muted">Заполните поля и загрузите фото</span></h3>
             <div style="display:grid;grid-template-columns:1fr 160px 120px;gap:10px;">
               <input id="newName" type="text" placeholder="Название (пример: Костюм черный)" />
               <select id="newCategory">
@@ -171,10 +154,14 @@
             </div>
           </div>
 
-          <div id="itemsList" class="items-list"></div>
+          <!-- list and grid wrappers -->
+          <div id="viewContainer" class="list-view">
+            <div id="itemsList" class="items-list"></div>
+            <div id="itemsGrid" class="items-grid" style="display:none"></div>
+          </div>
         </div>
 
-        <!-- Shopping section -->
+        <!-- Shopping -->
         <div id="shoppingSection" class="panel" style="display:none">
           <div class="card">
             <h3 style="margin-top:0">Шопинг — Добавить покупку</h3>
@@ -201,7 +188,7 @@
           </div>
         </div>
 
-        <!-- Outfits section -->
+        <!-- Outfits -->
         <div id="outfitsSection" class="panel" style="display:none">
           <div class="card">
             <h3 style="margin-top:0">Создать образ</h3>
@@ -230,7 +217,7 @@
           </div>
         </div>
 
-        <!-- Inspiration section -->
+        <!-- Inspiration -->
         <div id="inspirationSection" class="panel" style="display:none">
           <div class="card">
             <h3 style="margin-top:0">Идеи / Ссылки</h3>
@@ -244,14 +231,14 @@
           </div>
         </div>
 
-        <!-- Analytics section (expanded) -->
+        <!-- Analytics -->
         <div id="analyticsSection" class="panel" style="display:none">
-          <h3 style="margin-top:0">Аналитика — расширенный дашборд</h3>
+          <h3 style="margin-top:0">Аналитика</h3>
           <div id="analyticsContent"></div>
         </div>
       </section>
 
-      <!-- Sidebar (always visible) -->
+      <!-- Sidebar -->
       <aside class="sidebar panel" id="sidebar">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <div>
@@ -277,421 +264,433 @@
     </main>
   </div>
 
-  <script>
-    /* -------------------------------
-       Logic: storage, rendering, tabs
-       ------------------------------- */
+  <!-- Edit Modal (hidden by default) -->
+  <div id="editModal" style="display:none"></div>
 
-    const STORAGE_KEYS = {
-      wardrobe: 'wardrobe-data-v2',
-      shopping: 'shopping-data-v2',
-      outfits: 'outfits-data-v2',
-      links: 'inspiration-data-v2',
-      analytics: 'wardrobe-analytics-v1'
+<script>
+/* Storage keys */
+const STORAGE_KEYS = {
+  wardrobe: 'wardrobe-data-v2',
+  shopping: 'shopping-data-v2',
+  outfits: 'outfits-data-v2',
+  links: 'inspiration-data-v2',
+  analytics: 'wardrobe-analytics-v1'
+};
+function safeParse(s){ try{ return JSON.parse(s); } catch(e){return null;} }
+function storageGet(k){ try{ const r=localStorage.getItem(k); return r? safeParse(r): null; } catch(e){ return null; } }
+function storageSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); } catch(e){ console.warn('storageSet', e); } }
+function uid(){ return Date.now() + Math.floor(Math.random()*1000); }
+
+/* init defaults if empty (won't overwrite existing data) */
+function initDefaults(){
+  if(!storageGet(STORAGE_KEYS.wardrobe)){
+    storageSet(STORAGE_KEYS.wardrobe, {
+      suits:[{id:1,name:'Костюм черный однотонный',status:'есть',priority:'высокий',tags:'офис',notes:'',photo:''}],
+      shirts:[{id:2,name:'Рубашка белая',status:'есть',priority:'низкий',tags:'базовый',notes:'',photo:''}],
+      knitwear:[],polo:[],pants:[],shoes:[],accessories:[]
+    });
+  }
+  if(!storageGet(STORAGE_KEYS.shopping)) storageSet(STORAGE_KEYS.shopping, []);
+  if(!storageGet(STORAGE_KEYS.outfits)) storageSet(STORAGE_KEYS.outfits, []);
+  if(!storageGet(STORAGE_KEYS.links)) storageSet(STORAGE_KEYS.links, []);
+  if(!storageGet(STORAGE_KEYS.analytics)) storageSet(STORAGE_KEYS.analytics, []);
+}
+initDefaults();
+let wardrobe = storageGet(STORAGE_KEYS.wardrobe) || {};
+
+/* helpers */
+function flatten(w){ return Object.entries(w).flatMap(([cat,items]) => (items||[]).map(i => ({...i, category:cat}))); }
+function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* --- View mode (list / grid) --- */
+let viewMode = 'list'; // 'list' or 'grid'
+const listBtn = document.getElementById('listViewBtn');
+const gridBtn = document.getElementById('gridViewBtn');
+function setView(mode){
+  viewMode = mode;
+  const viewContainer = document.getElementById('viewContainer');
+  if(mode === 'grid'){
+    viewContainer.classList.add('grid-view');
+    document.getElementById('itemsList').style.display = 'none';
+    document.getElementById('itemsGrid').style.display = 'grid';
+    listBtn.classList.remove('active'); gridBtn.classList.add('active');
+  } else {
+    viewContainer.classList.remove('grid-view');
+    document.getElementById('itemsList').style.display = 'block';
+    document.getElementById('itemsGrid').style.display = 'none';
+    listBtn.classList.add('active'); gridBtn.classList.remove('active');
+  }
+  renderItems();
+}
+listBtn.addEventListener('click', ()=> setView('list'));
+gridBtn.addEventListener('click', ()=> setView('grid'));
+
+/* --- Add item with photo (photo -> base64) --- */
+async function addItem(){
+  const name = (document.getElementById('newName').value||'').trim();
+  if(!name) return alert('Введите название вещи');
+  const category = document.getElementById('newCategory').value;
+  const status = document.getElementById('newStatus').value;
+  const priority = document.getElementById('newPriority').value;
+  const tags = (document.getElementById('newTags').value||'').trim();
+  const notes = (document.getElementById('newNotes').value||'').trim();
+
+  // photo
+  const fileInput = document.getElementById('newPhoto');
+  let photo = '';
+  if(fileInput.files && fileInput.files[0]){
+    photo = await fileToDataURL(fileInput.files[0]);
+  }
+
+  const item = { id: uid(), name, status, priority, tags, notes, photo };
+  wardrobe[category] = wardrobe[category] || [];
+  wardrobe[category].push(item);
+  storageSet(STORAGE_KEYS.wardrobe, wardrobe);
+  clearAddForm();
+  renderAll();
+}
+
+function clearAddForm(){ document.getElementById('newName').value=''; document.getElementById('newTags').value=''; document.getElementById('newNotes').value=''; document.getElementById('newPhoto').value=''; document.getElementById('newPriority').value='низкий'; }
+
+async function fileToDataURL(file){
+  return await new Promise(resolve=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(r.result);
+    r.readAsDataURL(file);
+  });
+}
+
+/* --- Render items (both modes) --- */
+function renderItems(){
+  wardrobe = storageGet(STORAGE_KEYS.wardrobe) || wardrobe;
+  const items = flatten(wardrobe);
+  const search = (document.getElementById('search').value||'').toLowerCase();
+  const statusFilter = document.getElementById('filterStatus').value;
+  const prFilter = document.getElementById('filterPriority').value;
+
+  let shown = items.slice();
+  if(search) shown = shown.filter(i => i.name.toLowerCase().includes(search) || (i.tags||'').toLowerCase().includes(search));
+  if(statusFilter==='owned') shown = shown.filter(i => i.status === 'есть');
+  if(statusFilter==='needed') shown = shown.filter(i => i.status !== 'есть');
+  if(prFilter !== 'all') shown = shown.filter(i => i.priority === prFilter);
+
+  // list
+  const listContainer = document.getElementById('itemsList'); listContainer.innerHTML = '';
+  // grid
+  const gridContainer = document.getElementById('itemsGrid'); gridContainer.innerHTML = '';
+
+  if(shown.length === 0){
+    listContainer.innerHTML = '<div class="muted">Нет вещей для показа.</div>';
+    gridContainer.innerHTML = '<div class="muted">Нет вещей для показа.</div>';
+    return;
+  }
+
+  shown.forEach(it=>{
+    // LIST ITEM
+    const listEl = document.createElement('div'); listEl.className = 'item';
+    const photoEl = document.createElement('div'); photoEl.className='item-photo';
+    if(it.photo){
+      const img = document.createElement('img'); img.src = it.photo; img.alt=''; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; img.style.borderRadius='8px';
+      photoEl.appendChild(img);
+    } else {
+      photoEl.textContent = '🖼';
+    }
+    const info = document.createElement('div'); info.style.flex='1';
+    const title = document.createElement('div'); title.className='title'; title.innerHTML = `<strong>${escapeHtml(it.name)}</strong> <span class="muted">(${escapeHtml(it.category)})</span>`;
+    const meta = document.createElement('div'); meta.style.marginTop='6px';
+    const statusBadge = `<span class="badge ${it.status==='есть'?'green':'red'}">${it.status==='есть'?'Есть':'Нужно'}</span>`;
+    const prColor = it.priority==='критичный' ? '#7f1d1d' : it.priority==='высокий' ? '#9a3412' : it.priority==='средний' ? '#713f12' : '#374151';
+    const prBadge = `<span class="badge" style="background:${prColor};color:#fff;margin-left:8px">${escapeHtml(it.priority)}</span>`;
+    meta.innerHTML = statusBadge + prBadge;
+    const tagRow = document.createElement('div'); tagRow.className='muted'; tagRow.style.marginTop='8px'; tagRow.textContent = it.tags? '#' + it.tags.split(',')[0] : '';
+    const actions = document.createElement('div'); actions.style.marginTop='10px'; actions.style.display='flex'; actions.style.gap='8px';
+    const editBtn = document.createElement('button'); editBtn.className='btn ghost'; editBtn.textContent='Изменить'; editBtn.onclick = ()=> openEditModal(it.id);
+    const delBtn = document.createElement('button'); delBtn.className='btn ghost'; delBtn.textContent='Удалить'; delBtn.onclick = ()=> { if(confirm('Удалить вещь?')) deleteItem(it.id); };
+    actions.appendChild(editBtn); actions.appendChild(delBtn);
+
+    info.appendChild(title); info.appendChild(meta); info.appendChild(tagRow); info.appendChild(actions);
+    listEl.appendChild(photoEl); listEl.appendChild(info);
+    listContainer.appendChild(listEl);
+
+    // GRID CARD
+    const card = document.createElement('div'); card.className='grid-card';
+    const photoWrap = document.createElement('div'); photoWrap.className='card-photo';
+    if(it.photo){
+      const img = document.createElement('img'); img.src = it.photo; img.alt=''; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover';
+      photoWrap.appendChild(img);
+    } else {
+      photoWrap.textContent = '🖼';
+    }
+    const body = document.createElement('div'); body.className='card-body';
+    body.innerHTML = `<div class="grid-title">${escapeHtml(it.name)}</div>
+                      <div class="grid-meta"><div class="muted">${escapeHtml(it.category)}</div><div>${it.status==='есть'?'<span class="badge green">Есть</span>':'<span class="badge red">Нужно</span>'}</div></div>`;
+    const cardActions = document.createElement('div'); cardActions.style.display='flex'; cardActions.style.gap='8px'; cardActions.style.marginTop='10px';
+    const e2 = document.createElement('button'); e2.className='btn ghost'; e2.textContent='Изменить'; e2.onclick = ()=> openEditModal(it.id);
+    const d2 = document.createElement('button'); d2.className='btn ghost'; d2.textContent='Удалить'; d2.onclick = ()=> { if(confirm('Удалить вещь?')) deleteItem(it.id); };
+    cardActions.appendChild(e2); cardActions.appendChild(d2);
+    body.appendChild(cardActions);
+    card.appendChild(photoWrap); card.appendChild(body);
+    gridContainer.appendChild(card);
+  });
+}
+
+/* --- Delete and edit with photo support --- */
+function deleteItem(id){
+  Object.keys(wardrobe).forEach(cat=>{
+    wardrobe[cat] = (wardrobe[cat]||[]).filter(i=>i.id!==id);
+  });
+  storageSet(STORAGE_KEYS.wardrobe, wardrobe);
+  renderAll();
+}
+
+function openEditModal(id){
+  // find item
+  let item = null, catKey = null;
+  for(const [cat,arr] of Object.entries(wardrobe)){
+    const found = (arr||[]).find(i=>i.id===id);
+    if(found){ item = found; catKey = cat; break; }
+  }
+  if(!item) return alert('Вещь не найдена');
+
+  const modalRoot = document.getElementById('editModal');
+  modalRoot.innerHTML = '';
+  modalRoot.style.display = 'block';
+  const backdrop = document.createElement('div'); backdrop.className='modal-backdrop';
+  const modal = document.createElement('div'); modal.className='modal';
+
+  modal.innerHTML = `
+    <h3>Изменить вещь</h3>
+    <div style="display:grid;grid-template-columns:1fr 160px;gap:8px;margin-top:8px">
+      <input id="editName" type="text" value="${escapeHtml(item.name)}" />
+      <select id="editCategory">
+        <option value="suits">Костюмы</option><option value="shirts">Рубашки</option><option value="knitwear">Трикотаж</option><option value="polo">Поло</option><option value="pants">Брюки</option><option value="shoes">Обувь</option><option value="accessories">Аксессуары</option>
+      </select>
+      <select id="editStatus"><option value="есть">Есть</option><option value="нужен">Нужен</option></select>
+      <select id="editPriority"><option value="низкий">Низкий</option><option value="средний">Средний</option><option value="высокий">Высокий</option><option value="критичный">Критичный</option></select>
+      <input id="editTags" type="text" value="${escapeHtml(item.tags||'')}" style="grid-column:1/span2" />
+      <textarea id="editNotes" style="grid-column:1/span2">${escapeHtml(item.notes||'')}</textarea>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="editPhotoInput" type="file" accept="image/*" />
+      </div>
+      <div style="display:flex;justify-content:flex-end;align-items:center">
+        <button id="saveEditBtn" class="btn primary">Сохранить</button>
+      </div>
+    </div>
+    <div style="margin-top:12px" id="currentPhotoArea"></div>
+  `;
+
+  backdrop.appendChild(modal);
+  modalRoot.appendChild(backdrop);
+
+  // set current category/status/priority
+  document.getElementById('editCategory').value = catKey;
+  document.getElementById('editStatus').value = item.status || 'есть';
+  document.getElementById('editPriority').value = item.priority || 'низкий';
+
+  const curArea = document.getElementById('currentPhotoArea');
+  curArea.innerHTML = '';
+  if(item.photo){
+    const wrap = document.createElement('div'); wrap.className='photo-preview';
+    const img = document.createElement('img'); img.src = item.photo; img.style.width='180px'; img.style.height='180px'; img.style.objectFit='cover'; img.style.borderRadius='8px';
+    const delBtn = document.createElement('button'); delBtn.className='del-photo'; delBtn.textContent='✕'; delBtn.title='Удалить фото';
+    delBtn.onclick = ()=> {
+      if(!confirm('Удалить фото?')) return;
+      item.photo = '';
+      // update storage
+      storageSet(STORAGE_KEYS.wardrobe, wardrobe);
+      curArea.innerHTML = '<div class="muted">Фото удалено</div>';
     };
+    wrap.appendChild(img); wrap.appendChild(delBtn);
+    curArea.appendChild(wrap);
+  } else {
+    curArea.innerHTML = '<div class="muted">Фото отсутствует</div>';
+  }
 
-    function safeParse(s){ try { return JSON.parse(s); } catch(e) { return null; } }
-    function storageGet(key){ try { const raw = localStorage.getItem(key); return raw ? safeParse(raw) : null; } catch(e){ console.warn('storageGet', e); return null; } }
-    function storageSet(key, data){ try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) { console.warn('storageSet', e); } }
-
-    async function trackEvent(type, payload = {}) {
-      try {
-        const ev = { id: Date.now() + Math.floor(Math.random()*1000), type, payload, ts: new Date().toISOString() };
-        const arr = storageGet(STORAGE_KEYS.analytics) || [];
-        arr.push(ev);
-        storageSet(STORAGE_KEYS.analytics, arr);
-        if(window.ANALYTICS_ENDPOINT){
-          fetch(window.ANALYTICS_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(ev) }).catch(()=>{});
-        }
-      } catch(e){ console.warn('trackEvent', e); }
+  // save handler
+  document.getElementById('saveEditBtn').onclick = async ()=>{
+    const newName = (document.getElementById('editName').value||'').trim();
+    if(!newName) return alert('Название не может быть пустым');
+    const newCat = document.getElementById('editCategory').value;
+    const newStatus = document.getElementById('editStatus').value;
+    const newPriority = document.getElementById('editPriority').value;
+    const newTags = (document.getElementById('editTags').value||'').trim();
+    const newNotes = (document.getElementById('editNotes').value||'').trim();
+    // handle new photo
+    const phInput = document.getElementById('editPhotoInput');
+    if(phInput.files && phInput.files[0]){
+      const data = await fileToDataURL(phInput.files[0]);
+      item.photo = data;
     }
-
-    function initDefaults(){
-      const w = storageGet(STORAGE_KEYS.wardrobe);
-      if(!w){
-        const initial = {
-          suits: [{id:1,name:'Костюм черный однотонный',status:'есть',priority:'высокий',tags:'офис',notes:''}],
-          shirts: [{id:2,name:'Рубашка белая',status:'есть',priority:'низкий',tags:'базовый',notes:''}],
-          knitwear: [], polo: [], pants: [], shoes: [], accessories: []
-        };
-        storageSet(STORAGE_KEYS.wardrobe, initial);
-      }
-      if(!storageGet(STORAGE_KEYS.shopping)) storageSet(STORAGE_KEYS.shopping, []);
-      if(!storageGet(STORAGE_KEYS.outfits)) storageSet(STORAGE_KEYS.outfits, []);
-      if(!storageGet(STORAGE_KEYS.links)) storageSet(STORAGE_KEYS.links, []);
-      if(!storageGet(STORAGE_KEYS.analytics)) storageSet(STORAGE_KEYS.analytics, []);
+    // if category changed, move item
+    if(newCat !== catKey){
+      // remove from old
+      wardrobe[catKey] = (wardrobe[catKey]||[]).filter(i => i.id !== item.id);
+      item.name = newName; item.status=newStatus; item.priority=newPriority; item.tags=newTags; item.notes=newNotes;
+      wardrobe[newCat] = wardrobe[newCat] || [];
+      wardrobe[newCat].push(item);
+    } else {
+      Object.assign(item, { name:newName, status:newStatus, priority:newPriority, tags:newTags, notes:newNotes });
     }
-    initDefaults();
-
-    let wardrobe = storageGet(STORAGE_KEYS.wardrobe) || {};
-    function saveWardrobe(){ storageSet(STORAGE_KEYS.wardrobe, wardrobe); }
-
-    function uid(){ return Date.now() + Math.floor(Math.random()*1000); }
-    function flatten(w){ return Object.entries(w).flatMap(([cat,items]) => (items||[]).map(i => ({...i, category:cat}))); }
-
-    /* ----- Tabs handling ----- */
-    const tabs = document.querySelectorAll('.tab');
-    function showTab(name){
-      // hide all sections first
-      ['wardrobe','shopping','outfits','inspiration','analytics'].forEach(id => {
-        const el = document.getElementById(id + 'Section');
-        if(el) el.style.display = (id === name) ? 'block' : 'none';
-      });
-      // update active class
-      tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
-      // if special render needed
-      if(name === 'shopping') renderShopping();
-      if(name === 'outfits') renderOutfits();
-      if(name === 'inspiration') renderLinks();
-      if(name === 'analytics') renderAnalyticsView();
-      // ensure items re-render for wardrobe
-      if(name === 'wardrobe') renderItems();
-    }
-    tabs.forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
-
-    /* ----- Wardrobe rendering (existing) ----- */
-    function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
-
-    function renderItems(){
-      const container = document.getElementById('itemsList');
-      container.innerHTML = '';
-      const items = flatten(wardrobe);
-      const search = (document.getElementById('search').value||'').toLowerCase();
-      const statusFilter = document.getElementById('filterStatus').value;
-      const prFilter = document.getElementById('filterPriority').value;
-
-      let shown = items.slice();
-      if(search) shown = shown.filter(i => i.name.toLowerCase().includes(search) || (i.tags||'').toLowerCase().includes(search));
-      if(statusFilter==='owned') shown = shown.filter(i => i.status === 'есть');
-      if(statusFilter==='needed') shown = shown.filter(i => i.status !== 'есть');
-      if(prFilter !== 'all') shown = shown.filter(i => i.priority === prFilter);
-
-      if(shown.length === 0){
-        container.innerHTML = '<div class="muted">Ничего не найдено. Попробуйте изменить фильтры.</div>';
-        return;
-      }
-      shown.forEach(it => {
-        const el = document.createElement('div'); el.className = 'item';
-        const photo = it.photo ? `<img src="${it.photo}" alt="" class="item-photo"/>` : `<div class="item-photo" aria-hidden="true"></div>`;
-        const priorityColor = it.priority==='критичный' ? '#7f1d1d' : it.priority==='высокий' ? '#9a3412' : it.priority==='средний' ? '#713f12' : '#374151';
-        el.innerHTML = `
-          ${photo}
-          <div style="flex:1">
-            <div class="title">${escapeHtml(it.name)} <span class="muted">(${escapeHtml(it.category)})</span></div>
-            <div style="margin-top:6px">
-              <span class="badge ${it.status==='есть'?'green':'red'}">${it.status==='есть'?'Есть':'Нужно'}</span>
-              <span class="badge" style="background:${priorityColor};color:#fff;margin-left:8px">${escapeHtml(it.priority)}</span>
-            </div>
-            <div style="margin-top:8px" class="muted">${it.tags ? '#' + escapeHtml(it.tags.split(',')[0]) : ''}</div>
-            <div style="margin-top:10px;display:flex;gap:8px">
-              <button class="btn ghost" onclick="editItem(${it.id})">Изменить</button>
-              <button class="btn ghost" onclick="deleteItem(${it.id})">Удалить</button>
-            </div>
-          </div>
-        `;
-        container.appendChild(el);
-      });
-    }
-
-    function renderSidebar(){
-      const items = flatten(wardrobe);
-      const total = items.length;
-      const owned = items.filter(i=>i.status==='есть').length;
-      const completion = total ? Math.round((owned/total)*100) : 0;
-      document.getElementById('statTotal').textContent = `${total} вещей`;
-      document.getElementById('statCompletion').textContent = `${completion}%`;
-
-      // category stats
-      const cats = Object.entries(wardrobe).map(([cat,arr])=>{
-        const total = (arr||[]).length;
-        const owned = (arr||[]).filter(i=>i.status==='есть').length;
-        const percent = total? Math.round((owned/total)*100):0;
-        return {cat,total,owned,percent};
-      });
-      const catCont = document.getElementById('categoryStats'); catCont.innerHTML = '';
-      cats.forEach(c => {
-        const r = document.createElement('div'); r.style.marginBottom='10px';
-        r.innerHTML = `<div style="display:flex;justify-content:space-between"><div class="small">${escapeHtml(c.cat)}</div><div class="small">${c.owned}/${c.total}</div></div>
-                       <div class="progress" style="margin-top:6px"><i style="width:${c.percent}%"></i></div>`;
-        catCont.appendChild(r);
-      });
-
-      // top tags
-      const tags = getTopTags(10);
-      const tagsCont = document.getElementById('topTags'); tagsCont.innerHTML = '';
-      if(tags.length===0) tagsCont.innerHTML = '<div class="muted">Нет тегов</div>';
-      tags.forEach(t => {
-        const el = document.createElement('div'); el.className='small muted'; el.textContent = `#${t.tag} — ${t.count}`;
-        tagsCont.appendChild(el);
-      });
-    }
-
-    /* ----- Shopping rendering and actions ----- */
-    function renderShopping(){
-      const s = storageGet(STORAGE_KEYS.shopping) || [];
-      const active = s.filter(i=>!i.purchased);
-      const completed = s.filter(i=>i.purchased);
-      const actCont = document.getElementById('activePurchases'); actCont.innerHTML = '';
-      active.forEach(i=>{
-        const div = document.createElement('div'); div.className='item';
-        div.innerHTML = `<div style="flex:1"><div><strong>${escapeHtml(i.item)}</strong> <span class="muted small">${escapeHtml(i.priority)} ${i.price? '— ' + escapeHtml(i.price): ''}</span></div></div>`;
-        const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='6px';
-        const tog = document.createElement('button'); tog.className='btn ghost small'; tog.textContent='Куплено'; tog.onclick = ()=> togglePurchased(i.id);
-        const rem = document.createElement('button'); rem.className='btn ghost small'; rem.textContent='Удалить'; rem.onclick = ()=> removeShopping(i.id);
-        actions.appendChild(tog); actions.appendChild(rem);
-        div.appendChild(actions);
-        actCont.appendChild(div);
-      });
-      const compCont = document.getElementById('completedPurchases'); compCont.innerHTML = '';
-      completed.forEach(i=>{
-        const div = document.createElement('div'); div.className='item';
-        div.innerHTML = `<div style="flex:1"><div><strong style="text-decoration:line-through">${escapeHtml(i.item)}</strong> <span class="muted small">${i.purchasedDate||''}</span></div></div>`;
-        const rem = document.createElement('button'); rem.className='btn ghost small'; rem.textContent='Удалить'; rem.onclick = ()=> removeShopping(i.id);
-        div.appendChild(rem);
-        compCont.appendChild(div);
-      });
-    }
-
-    document.getElementById('addShopBtn').addEventListener('click', async ()=>{
-      const item = (document.getElementById('shopName').value||'').trim(); if(!item) return alert('Введите название покупки');
-      const priority = document.getElementById('shopPriority').value; const price = document.getElementById('shopPrice').value;
-      const list = storageGet(STORAGE_KEYS.shopping) || [];
-      const obj = { id: uid(), item, priority, price, category:'', plannedDate:'', purchased:false };
-      list.push(obj);
-      storageSet(STORAGE_KEYS.shopping, list);
-      trackEvent('add_shopping', { item, priority, price });
-      document.getElementById('shopName').value=''; document.getElementById('shopPrice').value='';
-      renderShopping();
-    });
-
-    function removeShopping(id){
-      let list = storageGet(STORAGE_KEYS.shopping) || [];
-      list = list.filter(i=>i.id!==id);
-      storageSet(STORAGE_KEYS.shopping, list);
-      trackEvent('remove_shopping', { id });
-      renderShopping();
-    }
-
-    function togglePurchased(id){
-      let list = storageGet(STORAGE_KEYS.shopping) || [];
-      list = list.map(i => i.id===id ? { ...i, purchased: !i.purchased, purchasedDate: !i.purchased? (new Date()).toISOString().split('T')[0] : null } : i);
-      storageSet(STORAGE_KEYS.shopping, list);
-      trackEvent('toggle_purchased', { id });
-      renderShopping();
-    }
-
-    /* ----- Outfits rendering and actions ----- */
-    function renderOutfits(){
-      const list = storageGet(STORAGE_KEYS.outfits) || [];
-      const outCont = document.getElementById('outfitsList'); outCont.innerHTML = '';
-      const w = storageGet(STORAGE_KEYS.wardrobe) || wardrobe;
-      const all = flatten(w);
-      if(list.length === 0){ outCont.innerHTML = '<div class="muted">Нет образов</div>'; return; }
-      list.forEach(o => {
-        const check = o.items.map(item => ({ item, have: all.some(wi=>wi.name.toLowerCase().includes(item.toLowerCase()) && wi.status==='есть') }));
-        const div = document.createElement('div'); div.className='card'; div.style.marginBottom='8px';
-        div.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(o.name)}</strong> <span class="muted small">${escapeHtml(o.category||'')}</span></div><div><button class="btn ghost small">Удалить</button></div></div>`;
-        const listEl = document.createElement('div'); listEl.style.marginTop='8px';
-        check.forEach(c => {
-          const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between';
-          row.innerHTML = `<div class="small">${escapeHtml(c.item)}</div><div class="small ${c.have? '':'muted'}">${c.have? 'Есть':'Нужно'}</div>`;
-          listEl.appendChild(row);
-        });
-        div.appendChild(listEl);
-        const delBtn = div.querySelector('button'); delBtn.onclick = ()=> { if(confirm('Удалить образ?')) { deleteOutfit(o.id); } };
-        outCont.appendChild(div);
-      });
-    }
-
-    document.getElementById('addOutfitBtn').addEventListener('click', async ()=>{
-      const name = (document.getElementById('outfitName').value||'').trim(); if(!name) return alert('Введите название образа');
-      const category = document.getElementById('outfitCategory').value; const season = document.getElementById('outfitSeason').value;
-      const items = (document.getElementById('outfitItems').value||'').split(',').map(s=>s.trim()).filter(Boolean);
-      const list = storageGet(STORAGE_KEYS.outfits) || [];
-      const o = { id: uid(), name, category, season, items, created: new Date().toISOString() };
-      list.push(o); storageSet(STORAGE_KEYS.outfits, list);
-      trackEvent('add_outfit', { name, items });
-      document.getElementById('outfitName').value=''; document.getElementById('outfitItems').value='';
-      renderOutfits();
-    });
-
-    function deleteOutfit(id){
-      let list = storageGet(STORAGE_KEYS.outfits) || [];
-      list = list.filter(o=>o.id!==id);
-      storageSet(STORAGE_KEYS.outfits, list);
-      trackEvent('delete_outfit', { id });
-      renderOutfits();
-    }
-
-    /* ----- Links (inspiration) ----- */
-    function renderLinks(){
-      const links = storageGet(STORAGE_KEYS.links) || [];
-      const cont = document.getElementById('linksList'); cont.innerHTML = '';
-      if(links.length === 0) { cont.innerHTML = '<div class="muted">Ссылок нет</div>'; return; }
-      links.forEach(l => {
-        const div = document.createElement('div'); div.className='item';
-        div.innerHTML = `<div style="flex:1"><a href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer" class="small">${escapeHtml(l.url)}</a></div>`;
-        const del = document.createElement('button'); del.className='btn ghost small'; del.textContent='Удалить'; del.onclick = ()=> removeLink(l.id);
-        div.appendChild(del);
-        cont.appendChild(div);
-      });
-    }
-    document.getElementById('addLinkBtn').addEventListener('click', async ()=>{
-      const url = (document.getElementById('newLink').value||'').trim(); if(!url) return alert('Введите ссылку');
-      const list = storageGet(STORAGE_KEYS.links) || [];
-      list.push({ id: uid(), url }); storageSet(STORAGE_KEYS.links, list);
-      trackEvent('add_link', { url });
-      document.getElementById('newLink').value=''; renderLinks();
-    });
-    function removeLink(id){
-      let list = storageGet(STORAGE_KEYS.links) || [];
-      list = list.filter(l=>l.id!==id); storageSet(STORAGE_KEYS.links, list); trackEvent('remove_link', { id }); renderLinks();
-    }
-
-    /* ----- Analytics view (expanded) ----- */
-    async function renderAnalyticsView(){
-      const items = flatten(storageGet(STORAGE_KEYS.wardrobe) || wardrobe);
-      const s = {
-        total: items.length,
-        owned: items.filter(i=>i.status==='есть').length,
-        needed: items.filter(i=>i.status!=='есть').length,
-        critical: items.filter(i => (i.priority||'').toString().toLowerCase().includes('крит')).length,
-      };
-      const events = storageGet(STORAGE_KEYS.analytics) || [];
-      const container = document.getElementById('analyticsContent');
-      container.innerHTML = `
-        <div class="card">
-          <div style="display:flex;gap:16px;flex-wrap:wrap">
-            <div style="min-width:140px"><div class="small muted">Всего вещей</div><div class="kpi">${s.total}</div></div>
-            <div style="min-width:140px"><div class="small muted">Есть</div><div class="kpi">${s.owned}</div></div>
-            <div style="min-width:140px"><div class="small muted">Нужно купить</div><div class="kpi">${s.needed}</div></div>
-            <div style="min-width:140px"><div class="small muted">Критичных</div><div class="kpi">${s.critical}</div></div>
-            <div style="min-width:140px"><div class="small muted">Событий аналитики</div><div class="kpi">${events.length}</div></div>
-          </div>
-        </div>
-        <div style="margin-top:12px" class="card">
-          <h4>Популярные теги</h4>
-          <div id="aTags"></div>
-        </div>
-      `;
-      const tags = getTopTags(20);
-      const tcont = document.getElementById('aTags'); tcont.innerHTML = '';
-      if(tags.length===0) tcont.innerHTML = '<div class="muted">Нет тегов</div>';
-      tags.forEach(t => { const el = document.createElement('div'); el.className='small muted'; el.textContent = `#${t.tag} — ${t.count}`; tcont.appendChild(el); });
-    }
-
-    /* ----- Helper functions reused in UI ----- */
-    function getTopTags(topN=10){
-      const all = flatten(wardrobe);
-      const map = {};
-      all.forEach(i => {
-        (i.tags||'').split(',').map(t => t.trim().toLowerCase()).filter(Boolean).forEach(t => map[t] = (map[t]||0)+1);
-      });
-      return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,topN).map(([tag,count]) => ({ tag, count }));
-    }
-
-    function getPriorityStats(){
-      const all = flatten(wardrobe);
-      const map = {};
-      all.forEach(i => { const p = (i.priority||'низкий').toString(); map[p] = (map[p]||0)+1; });
-      return Object.entries(map).map(([priority,count]) => ({ priority, count }));
-    }
-
-    /* ----- CRUD actions (wardrobe) ----- */
-    async function addItem(){
-      const name = (document.getElementById('newName').value||'').trim();
-      if(!name){ alert('Введите название вещи'); return; }
-      const category = document.getElementById('newCategory').value;
-      const status = document.getElementById('newStatus').value;
-      const priority = document.getElementById('newPriority').value;
-      const tags = (document.getElementById('newTags').value||'').trim();
-      const notes = (document.getElementById('newNotes').value||'').trim();
-
-      const fileInput = document.getElementById('newPhoto');
-      let photo = '';
-      if(fileInput.files && fileInput.files[0]){
-        const f = fileInput.files[0];
-        photo = await new Promise(resolve => {
-          const r = new FileReader();
-          r.onload = () => resolve(r.result);
-          r.readAsDataURL(f);
-        });
-      }
-
-      const item = { id: uid(), name, status, priority, tags, notes, photo };
-      wardrobe[category] = wardrobe[category] || [];
-      wardrobe[category].push(item);
-      saveWardrobe();
-      trackEvent('add_item', { category, name, priority, status });
-      clearAddForm();
-      renderAll();
-    }
-
-    function clearAddForm(){
-      document.getElementById('newName').value=''; document.getElementById('newTags').value=''; document.getElementById('newNotes').value=''; document.getElementById('newPhoto').value='';
-    }
-
-    function deleteItem(id){
-      if(!confirm('Удалить вещь?')) return;
-      Object.keys(wardrobe).forEach(cat => {
-        wardrobe[cat] = (wardrobe[cat]||[]).filter(i => i.id !== id);
-      });
-      saveWardrobe();
-      trackEvent('delete_item', { id });
-      renderAll();
-    }
-
-    function editItem(id){
-      let item = null; let catKey = null;
-      for(const [cat,arr] of Object.entries(wardrobe)){
-        const found = (arr||[]).find(i => i.id === id);
-        if(found){ item = found; catKey = cat; break; }
-      }
-      if(!item) return alert('Вещь не найдена');
-      const newName = prompt('Название', item.name);
-      if(newName === null) return;
-      const newStatus = prompt('Статус (есть/нужен)', item.status) || item.status;
-      const newPriority = prompt('Приоритет (низкий/средний/высокий/критичный)', item.priority) || item.priority;
-      const newTags = prompt('Теги (через запятую)', item.tags||'') ;
-      const newNotes = prompt('Заметки', item.notes||'') ;
-      Object.assign(item, { name: newName, status: newStatus, priority: newPriority, tags: newTags, notes: newNotes });
-      saveWardrobe();
-      trackEvent('update_item', { id, after: { name:newName, status:newStatus, priority:newPriority } });
-      renderAll();
-    }
-
-    /* ----- Utilities / event bindings ----- */
-    document.getElementById('addItemBtn').addEventListener('click', addItem);
-    document.getElementById('search').addEventListener('input', () => renderItems());
-    document.getElementById('filterStatus').addEventListener('change', ()=> renderItems());
-    document.getElementById('filterPriority').addEventListener('change', ()=> renderItems());
-    document.getElementById('exportBtn').addEventListener('click', async ()=> { await exportFullReport(); });
-    document.getElementById('openAnalytics').addEventListener('click', ()=> { showTab('analytics'); trackEvent('open_analytics', {}); });
-
-    function updateMobileToolbar(){
-      const mt = document.getElementById('mobileToolbar');
-      if(window.innerWidth <= 900) mt.style.display = 'flex'; else mt.style.display = 'none';
-    }
-    window.addEventListener('resize', updateMobileToolbar);
-
-    /* ----- Render all ----- */
-    function renderAll(){
-      wardrobe = storageGet(STORAGE_KEYS.wardrobe) || wardrobe;
-      renderItems();
-      renderSidebar();
-    }
-
-    // Expose for inline buttons
-    window.deleteItem = deleteItem;
-    window.editItem = editItem;
-
-    // initial render
+    storageSet(STORAGE_KEYS.wardrobe, wardrobe);
+    closeEditModal();
     renderAll();
-    updateMobileToolbar();
-    trackEvent('page_view', { path: location.pathname });
+  };
 
-    // Show default tab (wardrobe)
-    showTab('wardrobe');
-  </script>
+  // close on backdrop click
+  backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeEditModal(); });
+}
+
+function closeEditModal(){ const modalRoot=document.getElementById('editModal'); modalRoot.innerHTML=''; modalRoot.style.display='none'; }
+
+/* --- Shopping functions --- */
+document.getElementById('addShopBtn').addEventListener('click', ()=>{
+  const item = (document.getElementById('shopName').value||'').trim(); if(!item) return alert('Введите название покупки');
+  const priority = document.getElementById('shopPriority').value; const price = document.getElementById('shopPrice').value;
+  const list = storageGet(STORAGE_KEYS.shopping) || [];
+  const obj = { id: uid(), item, priority, price, category:'', plannedDate:'', purchased:false };
+  list.push(obj); storageSet(STORAGE_KEYS.shopping, list);
+  document.getElementById('shopName').value=''; document.getElementById('shopPrice').value='';
+  renderShopping();
+});
+
+function renderShopping(){
+  const s = storageGet(STORAGE_KEYS.shopping) || [];
+  const active = s.filter(i=>!i.purchased);
+  const completed = s.filter(i=>i.purchased);
+  const actCont = document.getElementById('activePurchases'); actCont.innerHTML='';
+  active.forEach(i=>{
+    const d = document.createElement('div'); d.className='item';
+    d.innerHTML = `<div style="flex:1"><div><strong>${escapeHtml(i.item)}</strong> <span class="muted small">${escapeHtml(i.priority)} ${i.price? '— ' + escapeHtml(i.price): ''}</span></div></div>`;
+    const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='6px';
+    const tog = document.createElement('button'); tog.className='btn ghost small'; tog.textContent='Куплено'; tog.onclick = ()=> togglePurchased(i.id);
+    const rem = document.createElement('button'); rem.className='btn ghost small'; rem.textContent='Удалить'; rem.onclick = ()=> removeShopping(i.id);
+    actions.appendChild(tog); actions.appendChild(rem);
+    d.appendChild(actions);
+    actCont.appendChild(d);
+  });
+  const compCont = document.getElementById('completedPurchases'); compCont.innerHTML='';
+  completed.forEach(i=>{
+    const d = document.createElement('div'); d.className='item';
+    d.innerHTML = `<div style="flex:1"><div><strong style="text-decoration:line-through">${escapeHtml(i.item)}</strong> <span class="muted small">${i.purchasedDate||''}</span></div></div>`;
+    const rem = document.createElement('button'); rem.className='btn ghost small'; rem.textContent='Удалить'; rem.onclick = ()=> removeShopping(i.id);
+    d.appendChild(rem); compCont.appendChild(d);
+  });
+}
+function removeShopping(id){ let list=storageGet(STORAGE_KEYS.shopping)||[]; list=list.filter(i=>i.id!==id); storageSet(STORAGE_KEYS.shopping,list); renderShopping(); }
+function togglePurchased(id){ let list=storageGet(STORAGE_KEYS.shopping)||[]; list=list.map(i=>i.id===id?{...i,purchased:!i.purchased,purchasedDate:!i.purchased? (new Date()).toISOString().split('T')[0] : null}:i); storageSet(STORAGE_KEYS.shopping,list); renderShopping(); }
+
+/* --- Outfits --- */
+document.getElementById('addOutfitBtn').addEventListener('click', ()=>{
+  const name=(document.getElementById('outfitName').value||'').trim(); if(!name) return alert('Введите название образа');
+  const category=document.getElementById('outfitCategory').value; const season=document.getElementById('outfitSeason').value;
+  const items=(document.getElementById('outfitItems').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const list = storageGet(STORAGE_KEYS.outfits) || []; list.push({id:uid(),name,category,season,items,created:new Date().toISOString()}); storageSet(STORAGE_KEYS.outfits,list);
+  document.getElementById('outfitName').value=''; document.getElementById('outfitItems').value=''; renderOutfits();
+});
+function renderOutfits(){
+  const list = storageGet(STORAGE_KEYS.outfits) || [];
+  const cont = document.getElementById('outfitsList'); cont.innerHTML='';
+  if(list.length===0){ cont.innerHTML='<div class="muted">Нет образов</div>'; return; }
+  const w = storageGet(STORAGE_KEYS.wardrobe) || wardrobe;
+  const all = flatten(w);
+  list.forEach(o=>{
+    const check = o.items.map(it=>({item:it, have: all.some(wi => wi.name.toLowerCase().includes(it.toLowerCase()) && wi.status==='есть')}));
+    const div = document.createElement('div'); div.className='card'; div.style.marginBottom='8px';
+    div.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(o.name)}</strong> <span class="muted">${escapeHtml(o.category||'')}</span></div><div><button class="btn ghost small">Удалить</button></div></div>`;
+    const listEl = document.createElement('div'); listEl.style.marginTop='8px';
+    check.forEach(c=>{ const row=document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.innerHTML=`<div class="small">${escapeHtml(c.item)}</div><div class="small ${c.have?'':'muted'}">${c.have?'Есть':'Нужно'}</div>`; listEl.appendChild(row); });
+    div.appendChild(listEl);
+    const delBtn = div.querySelector('button'); delBtn.onclick = ()=> { if(confirm('Удалить образ?')) { deleteOutfit(o.id); } };
+    cont.appendChild(div);
+  });
+}
+function deleteOutfit(id){ let l=storageGet(STORAGE_KEYS.outfits)||[]; l=l.filter(o=>o.id!==id); storageSet(STORAGE_KEYS.outfits,l); renderOutfits(); }
+
+/* --- Links --- */
+document.getElementById('addLinkBtn').addEventListener('click', ()=>{
+  const url=(document.getElementById('newLink').value||'').trim(); if(!url) return alert('Введите ссылку');
+  const list = storageGet(STORAGE_KEYS.links)||[]; list.push({id:uid(),url}); storageSet(STORAGE_KEYS.links,list); document.getElementById('newLink').value=''; renderLinks();
+});
+function renderLinks(){ const list = storageGet(STORAGE_KEYS.links)||[]; const cont=document.getElementById('linksList'); cont.innerHTML=''; if(list.length===0){ cont.innerHTML='<div class="muted">Ссылок нет</div>'; return;} list.forEach(l=>{ const d=document.createElement('div'); d.className='item'; d.innerHTML=`<div style="flex:1"><a href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer" class="small">${escapeHtml(l.url)}</a></div>`; const del=document.createElement('button'); del.className='btn ghost small'; del.textContent='Удалить'; del.onclick=()=>{ let arr=storageGet(STORAGE_KEYS.links)||[]; arr=arr.filter(x=>x.id!==l.id); storageSet(STORAGE_KEYS.links,arr); renderLinks(); }; d.appendChild(del); cont.appendChild(d); }); }
+
+/* --- Analytics view --- */
+function renderAnalyticsView(){
+  const items = flatten(storageGet(STORAGE_KEYS.wardrobe) || wardrobe);
+  const s = { total: items.length, owned: items.filter(i=>i.status==='есть').length, needed: items.filter(i=>i.status!=='есть').length, critical: items.filter(i => (i.priority||'').toString().toLowerCase().includes('крит')).length };
+  const events = storageGet(STORAGE_KEYS.analytics) || [];
+  const container = document.getElementById('analyticsContent');
+  container.innerHTML = `<div class="card"><div style="display:flex;gap:16px;flex-wrap:wrap"><div style="min-width:140px"><div class="small muted">Всего вещей</div><div class="kpi">${s.total}</div></div><div style="min-width:140px"><div class="small muted">Есть</div><div class="kpi">${s.owned}</div></div><div style="min-width:140px"><div class="small muted">Нужно купить</div><div class="kpi">${s.needed}</div></div><div style="min-width:140px"><div class="small muted">Критичных</div><div class="kpi">${s.critical}</div></div><div style="min-width:140px"><div class="small muted">Событий аналитики</div><div class="kpi">${events.length}</div></div></div></div>`;
+}
+
+/* --- sidebar and totals --- */
+function renderSidebar(){
+  const items = flatten(storageGet(STORAGE_KEYS.wardrobe) || wardrobe);
+  const total = items.length;
+  const owned = items.filter(i=>i.status==='есть').length;
+  const completion = total? Math.round((owned/total)*100):0;
+  document.getElementById('statTotal').textContent = `${total} вещей`;
+  document.getElementById('statCompletion').textContent = `${completion}%`;
+
+  // categories stats
+  const cats = Object.entries(storageGet(STORAGE_KEYS.wardrobe) || wardrobe).map(([cat,arr])=>{ const tot=(arr||[]).length; const own=(arr||[]).filter(i=>i.status==='есть').length; const percent=tot?Math.round((own/tot)*100):0; return {cat,tot,own,percent}; });
+  const catCont=document.getElementById('categoryStats'); catCont.innerHTML=''; cats.forEach(c=>{ const r=document.createElement('div'); r.style.marginBottom='10px'; r.innerHTML=`<div style="display:flex;justify-content:space-between"><div class="small">${escapeHtml(c.cat)}</div><div class="small">${c.own}/${c.tot}</div></div><div class="progress" style="margin-top:6px"><i style="width:${c.percent}%"></i></div>`; catCont.appendChild(r); });
+
+  // top tags
+  const tags = getTopTags(10); const tagsCont = document.getElementById('topTags'); tagsCont.innerHTML=''; if(tags.length===0) tagsCont.innerHTML='<div class="muted">Нет тегов</div>'; tags.forEach(t=>{ const el=document.createElement('div'); el.className='small muted'; el.textContent = `#${t.tag} — ${t.count}`; tagsCont.appendChild(el); });
+}
+
+function getTopTags(topN=10){ const all = flatten(storageGet(STORAGE_KEYS.wardrobe) || wardrobe); const map={}; all.forEach(i=>{ (i.tags||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean).forEach(t=> map[t]=(map[t]||0)+1); }); return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,topN).map(([tag,count])=>({tag,count})); }
+
+/* --- Export --- */
+async function exportFullReport(){
+  const items = flatten(storageGet(STORAGE_KEYS.wardrobe) || wardrobe);
+  const total = items.length; const owned = items.filter(i=>i.status==='есть').length;
+  let txt = `Отчёт: Мой гардероб\nДата: ${new Date().toISOString()}\n\nВсего: ${total}\nЕсть: ${owned}\n\nСписок:\n`;
+  items.forEach(i=> txt += `- ${i.name} (${i.category}) ${i.status} ${i.priority} ${i.tags? ' #' + i.tags : ''}\n`);
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'wardrobe-report.txt'; a.click(); URL.revokeObjectURL(url);
+}
+
+/* --- UI hooks --- */
+document.getElementById('addItemBtn').addEventListener('click', addItem);
+document.getElementById('search').addEventListener('input', ()=> renderItems());
+document.getElementById('filterStatus').addEventListener('change', ()=> renderItems());
+document.getElementById('filterPriority').addEventListener('change', ()=> renderItems());
+
+document.getElementById('exportBtn').addEventListener('click', exportFullReport);
+
+/* Tabs switching */
+const tabs = document.querySelectorAll('.tab');
+function showTab(name){
+  ['wardrobe','shopping','outfits','inspiration','analytics'].forEach(id=>{
+    const el = document.getElementById(id + 'Section');
+    if(el) el.style.display = (id === name) ? 'block' : 'none';
+  });
+  tabs.forEach(t=> t.classList.toggle('active', t.dataset.tab === name));
+  // render specific
+  if(name === 'shopping') renderShopping();
+  if(name === 'outfits') renderOutfits();
+  if(name === 'inspiration') renderLinks();
+  if(name === 'analytics') renderAnalyticsView();
+  if(name === 'wardrobe') renderItems();
+}
+tabs.forEach(t => t.addEventListener('click', ()=> showTab(t.dataset.tab)));
+
+/* initial render */
+function renderAll(){ wardrobe = storageGet(STORAGE_KEYS.wardrobe) || wardrobe; renderItems(); renderSidebar(); renderShopping(); renderOutfits(); renderLinks(); renderAnalyticsView(); }
+renderAll();
+setView('list');
+
+/* expose for inline onclicks */
+window.openEditModal = openEditModal;
+window.deleteItem = deleteItem;
+
+/* ensure mobile toolbar visibility (kept simple) */
+function updateMobileToolbar(){ /* placeholder if needed */ }
+window.addEventListener('resize', updateMobileToolbar);
+
+/* close modal on escape */
+window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeEditModal(); });
+
+</script>
 </body>
 </html>
