@@ -1,1436 +1,860 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, ShoppingBag, Star, Lightbulb, Trash2, Edit2, Save, TrendingUp, Download, Tag, X, Check, Calendar, Grid, List, Camera, Image } from 'lucide-react';
-
-const ANALYTICS_KEY = 'wardrobe-analytics-v1';
-
-const WardrobeApp = () => {
-  const [activeTab, setActiveTab] = useState('wardrobe');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [wardrobeItems, setWardrobeItems] = useState({});
-  const [shoppingList, setShoppingList] = useState([]);
-  const [outfits, setOutfits] = useState([]);
-  const [inspirationLinks, setInspirationLinks] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [editingItem, setEditingItem] = useState(null);
-  const [newItem, setNewItem] = useState({ name: '', category: 'suits', status: 'есть', priority: 'низкий', tags: '', notes: '', photo: '' });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterPriority, setFilterPriority] = useState('all');
-  const [showStats, setShowStats] = useState(true);
-  const [outfitFilter, setOutfitFilter] = useState('all');
-  const [newShop, setNewShop] = useState({ item: '', priority: 'СРЕДНИЙ', price: '', category: '', plannedDate: '' });
-  const [newOutfit, setNewOutfit] = useState({ name: '', category: '', season: '', items: '' });
-  const [newLink, setNewLink] = useState('');
-  const [viewMode, setViewMode] = useState('list'); // 'list' или 'grid'
-  const [uploadingPhoto, setUploadingPhoto] = useState(null);
-
-  // Analytics UI toggle
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [analyticsEvents, setAnalyticsEvents] = useState([]);
-
-  // ---- Analytics helpers ----
-  const trackEvent = async (type, payload = {}) => {
-    try {
-      const event = { id: Date.now(), type, payload, ts: new Date().toISOString() };
-      const existing = JSON.parse(localStorage.getItem(ANALYTICS_KEY) || '[]');
-      existing.push(event);
-      localStorage.setItem(ANALYTICS_KEY, JSON.stringify(existing));
-      setAnalyticsEvents(existing.slice(-200));
-      if (window.ANALYTICS_ENDPOINT) {
-        fetch(window.ANALYTICS_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(event),
-        }).catch(() => {});
-      }
-    } catch (e) {
-      console.error('Analytics error', e);
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Мой гардероб — Веб версия</title>
+  <style>
+    :root{
+      --bg:#0f1720; --panel:#111827; --muted:#9CA3AF; --accent:#dc2626; --accent-2:#f59e0b;
+      --card:#111827; --card-border:rgba(255,255,255,0.04);
     }
-  };
-
-  const loadAnalyticsFromStorage = () => {
-    try {
-      const existing = JSON.parse(localStorage.getItem(ANALYTICS_KEY) || '[]');
-      setAnalyticsEvents(existing.slice(-200));
-    } catch (e) {
-      setAnalyticsEvents([]);
-    }
-  };
-
-  // ---- Data loading ----
-  useEffect(() => {
-    loadData();
-    loadAnalyticsFromStorage();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const wardrobeResult = await window.storage.get('wardrobe-data-v2');
-      const shoppingResult = await window.storage.get('shopping-data-v2');
-      const outfitsResult = await window.storage.get('outfits-data-v2');
-      const linksResult = await window.storage.get('inspiration-data-v2');
-
-      if (wardrobeResult) {
-        setWardrobeItems(JSON.parse(wardrobeResult.value));
-      } else {
-        const initial = loadInitialWardrobe();
-        setWardrobeItems(initial);
-        await window.storage.set('wardrobe-data-v2', JSON.stringify(initial));
-      }
-
-      if (shoppingResult) {
-        setShoppingList(JSON.parse(shoppingResult.value));
-      } else {
-        const initial = loadInitialShopping();
-        setShoppingList(initial);
-        await window.storage.set('shopping-data-v2', JSON.stringify(initial));
-      }
-
-      if (outfitsResult) {
-        setOutfits(JSON.parse(outfitsResult.value));
-      } else {
-        const initial = loadInitialOutfits();
-        setOutfits(initial);
-        await window.storage.set('outfits-data-v2', JSON.stringify(initial));
-      }
-
-      if (linksResult) {
-        setInspirationLinks(JSON.parse(linksResult.value));
-      }
-    } catch (error) {
-      console.error('Ошибка:', error);
-      setWardrobeItems(loadInitialWardrobe());
-      setShoppingList(loadInitialShopping());
-      setOutfits(loadInitialOutfits());
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadInitialWardrobe = () => ({
-    suits: [
-      { id: 1, name: 'Костюм черный однотонный', status: 'есть', priority: 'высокий', tags: 'офис, формальный', notes: '' },
-      { id: 2, name: 'Костюм синий в полоску', status: 'есть', priority: 'средний', tags: 'офис', notes: '' },
-      { id: 3, name: 'Костюм коричневый кэжуал', status: 'есть', priority: 'средний', tags: 'casual', notes: '' },
-      { id: 4, name: 'Костюм темный в клетку', status: 'есть', priority: 'средний', tags: 'офис', notes: '' },
-      { id: 5, name: 'Костюм темно-синий однотонный', status: 'нужен', priority: 'критичный', tags: 'судейство', notes: '' }
-    ],
-    shirts: [
-      { id: 6, name: 'Рубашки белые', count: 2, status: 'есть', priority: 'средний', tags: 'базовый', notes: '' },
-      { id: 7, name: 'Рубашки синие', count: 3, status: 'есть', priority: 'низкий', tags: 'базовый', notes: '' },
-      { id: 8, name: 'Рубашки черные', count: 2, status: 'есть', priority: 'низкий', tags: 'базовый', notes: '' },
-      { id: 9, name: 'Рубашка бежевая', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
-      { id: 10, name: 'Рубашка темно-серая с узором', status: 'есть', priority: 'низкий', tags: 'офис', notes: '' },
-      { id: 11, name: 'Рубашки серые летние', count: 2, status: 'есть', priority: 'низкий', tags: 'лето', notes: '' }
-    ],
-    knitwear: [
-      { id: 12, name: 'Водолазка белая', status: 'есть', priority: 'низкий', tags: 'зима, базовый', notes: '' },
-      { id: 13, name: 'Водолазка синяя (новая)', status: 'есть', priority: 'низкий', tags: 'зима', notes: '' },
-      { id: 14, name: 'Водолазка черная', status: 'нужна', priority: 'высокий', tags: 'зима', notes: '' },
-      { id: 15, name: 'Жил��тка синяя шерсть 100%', status: 'есть', priority: 'низкий', tags: 'тренировки', notes: '' },
-      { id: 16, name: 'Свитер серый', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
-      { id: 17, name: 'Свитер голубой', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
-      { id: 18, name: 'Свитер синий', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
-      { id: 19, name: 'Свитер белый в полоску', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
-      { id: 20, name: 'Свитер коричневый в полоску', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
-      { id: 21, name: 'Свитер черно-белый', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
-      { id: 22, name: 'Толстовка бордовая', status: 'есть', priority: 'низкий', tags: 'спорт', notes: '' },
-      { id: 23, name: 'Толстовка черная', status: 'есть', priority: 'низкий', tags: 'спорт', notes: '' }
-    ],
-    polo: [
-      { id: 24, name: 'Поло бордовое Ralph Lauren', status: 'есть', priority: 'низкий', signature: true, tags: 'лето', notes: '' },
-      { id: 25, name: 'Поло синее Ralph Lauren', count: 2, status: 'есть', priority: 'низкий', tags: 'лето', notes: '' },
-      { id: 26, name: 'Поло коричневое', status: 'есть', priority: 'низкий', tags: 'лето', notes: '' },
-      { id: 27, name: 'Поло серое', status: 'есть', priority: 'низкий', tags: 'лето', notes: '' },
-      { id: 28, name: 'Поло черное', status: 'есть', priority: 'низкий', tags: 'лето', notes: '' },
-      { id: 29, name: 'Поло темно-синее', status: 'есть', priority: 'низкий', tags: 'лето', notes: '' }
-    ],
-    pants: [
-      { id: 30, name: 'Брюки серые шерстяные', status: 'есть', priority: 'низкий', tags: 'офис', notes: '' },
-      { id: 31, name: 'Брюки темно-синие', status: 'есть', priority: 'низкий', tags: 'офис', notes: '' },
-      { id: 32, name: 'Брюки серые классические', status: 'есть', priority: 'низкий', tags: 'офис', notes: '' },
-      { id: 33, name: 'Брюки черные', status: 'есть', priority: 'низкий', tags: 'офис', notes: '' },
-      { id: 34, name: 'Джинсы темно-синие', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
-      { id: 35, name: 'Джинсы серые', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
-      { id: 36, name: 'Джинсы светло-синие', count: 2, status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
-      { id: 37, name: 'Чиносы табачные', status: 'нужны', priority: 'высокий', tags: 'casual', notes: '' },
-      { id: 38, name: 'Чиносы оливковые', status: 'нужны', priority: 'высокий', tags: 'casual', notes: '' },
-      { id: 39, name: 'Чиносы бежевые', status: 'нужны', priority: 'средний', tags: 'casual', notes: '' }
-    ],
-    shoes: [
-      { id: 40, name: 'Челси черные', status: 'есть', priority: 'низкий', tags: 'универсальные', notes: '' },
-      { id: 41, name: 'Ботинки черные высокие', status: 'есть', priority: 'низкий', tags: 'зима', notes: '' },
-      { id: 42, name: 'Ботинки утепленные', status: 'есть', priority: 'низкий', tags: 'зима', notes: '' },
-      { id: 43, name: 'Мокасины серые', status: 'есть', priority: 'низкий', tags: 'лето', notes: '' },
-      { id: 44, name: 'Кроссовки черные', count: 3, status: 'есть', priority: 'низкий', tags: 'спорт', notes: '' },
-      { id: 45, name: 'Туфли черные классические', status: 'нужны', priority: 'критичный', tags: 'формальный', notes: '' },
-      { id: 46, name: 'Туфли burgundy', status: 'нужны', priority: 'критичный', signature: true, tags: 'изюминка', notes: '' },
-      { id: 47, name: 'Кроссовки белые', status: 'нужны', priority: 'высокий', tags: 'casual', notes: '' }
-    ],
-    accessories: [
-      { id: 48, name: 'Галстук черный', status: 'есть', priority: 'низкий', tags: 'формальный', notes: '' },
-      { id: 49, name: 'Галстук бордовый', status: 'есть', priority: 'низкий', signature: true, tags: 'изюминка', notes: '' },
-      { id: 50, name: 'Галстук синий', status: 'есть', priority: 'низкий', tags: 'формальный', notes: '' },
-      { id: 51, name: 'Нагрудные платки', status: 'нужны', priority: 'средний', tags: 'аксессуары', notes: '' },
-      { id: 52, name: 'Запонки', status: 'нужны', priority: 'средний', tags: 'аксессуары', notes: '' },
-      { id: 53, name: 'Шарф кашемир', status: 'нужен', priority: 'средний', tags: 'зима', notes: '' },
-      { id: 54, name: 'Перчатки кожаные', status: 'нужны', priority: 'средний', tags: 'зима', notes: '' }
-    ]
-  });
-
-  const loadInitialShopping = () => [
-    { id: 1, item: 'Костюм темно-синий', priority: 'КРИТИЧНО', price: '€400-700', category: 'Судейство', plannedDate: '', purchased: false },
-    { id: 2, item: 'Туфли черные', priority: 'КРИТИЧНО', price: '€200-400', category: 'Судейство', plannedDate: '', purchased: false },
-    { id: 3, item: 'Туфли burgundy', priority: 'КРИТИЧНО', price: '€200-300', category: 'Изюминка', plannedDate: '', purchased: false }
-  ];
-
-  const loadInitialOutfits = () => [
-    {
-      id: 1,
-      name: 'Элегантный тренер',
-      category: 'Тренировки',
-      season: 'зима',
-      items: ['Водолазка синяя', 'Жилетка синяя', 'Брюки серые', 'Челси черные'],
-      complete: true
-    }
-  ];
-
-  const saveData = async (key, data, setter) => {
-    try {
-      await window.storage.set(key, JSON.stringify(data));
-      setter(data);
-    } catch (e) {
-      console.error('Ошибка сохранения:', e);
-    }
-  };
-
-  // ---- Instrumented actions ----
-  const addWardrobeItem = async () => {
-    if (!newItem.name) return;
-    const category = newItem.category;
-    const item = { ...newItem, id: Date.now() };
-    const updated = {
-      ...wardrobeItems,
-      [category]: [...(wardrobeItems[category] || []), item]
-    };
-    await saveData('wardrobe-data-v2', updated, setWardrobeItems);
-    trackEvent('add_item', { category, name: item.name, priority: item.priority, status: item.status });
-    setNewItem({ name: '', category: 'suits', status: 'есть', priority: 'низкий', tags: '', notes: '', photo: '' });
-  };
-
-  const deleteWardrobeItem = async (category, itemId) => {
-    const itemToDelete = (wardrobeItems[category] || []).find(i => i.id === itemId);
-    const updated = {
-      ...wardrobeItems,
-      [category]: wardrobeItems[category].filter(item => item.id !== itemId)
-    };
-    await saveData('wardrobe-data-v2', updated, setWardrobeItems);
-    trackEvent('delete_item', { category, id: itemId, name: itemToDelete?.name });
-  };
-
-  const updateWardrobeItem = async (category, itemId, updates) => {
-    const prev = (wardrobeItems[category] || []).find(i => i.id === itemId);
-    const updated = {
-      ...wardrobeItems,
-      [category]: wardrobeItems[category].map(item =>
-        item.id === itemId ? { ...item, ...updates } : item
-      )
-    };
-    await saveData('wardrobe-data-v2', updated, setWardrobeItems);
-    setEditingItem(null);
-    trackEvent('update_item', { category, id: itemId, before: { name: prev?.name, status: prev?.status, priority: prev?.priority }, after: { name: updates.name || prev?.name, status: updates.status || prev?.status, priority: updates.priority || prev?.priority } });
-  };
-
-  const addShoppingItem = async (item) => {
-    const newObj = { ...item, id: Date.now(), purchased: false };
-    const updated = [...shoppingList, newObj];
-    await saveData('shopping-data-v2', updated, setShoppingList);
-    trackEvent('add_shopping', { item: newObj.item, price: newObj.price, priority: newObj.priority });
-  };
-
-  const removeShoppingItem = async (id) => {
-    const item = shoppingList.find(i => i.id === id);
-    const updated = shoppingList.filter(i => i.id !== id);
-    await saveData('shopping-data-v2', updated, setShoppingList);
-    trackEvent('remove_shopping', { id, item: item?.item });
-  };
-
-  const togglePurchased = async (id) => {
-    const updated = shoppingList.map(item =>
-      item.id === id ? { ...item, purchased: !item.purchased, purchasedDate: !item.purchased ? new Date().toISOString().split('T')[0] : null } : item
-    );
-    await saveData('shopping-data-v2', updated, setShoppingList);
-    const toggled = updated.find(i => i.id === id);
-    trackEvent('toggle_purchased', { id, item: toggled?.item, purchased: toggled?.purchased });
-  };
-
-  const addOutfit = async (outfit) => {
-    const newObj = { ...outfit, id: Date.now() };
-    const updated = [...outfits, newObj];
-    await saveData('outfits-data-v2', updated, setOutfits);
-    trackEvent('add_outfit', { name: newObj.name, items: newObj.items });
-  };
-
-  const deleteOutfit = async (id) => {
-    const outfit = outfits.find(o => o.id === id);
-    const updated = outfits.filter(o => o.id !== id);
-    await saveData('outfits-data-v2', updated, setOutfits);
-    trackEvent('delete_outfit', { id, name: outfit?.name });
-  };
-
-  const addLink = async (link) => {
-    const updated = [...inspirationLinks, { id: Date.now(), url: link }];
-    await saveData('inspiration-data-v2', updated, setInspirationLinks);
-    trackEvent('add_link', { url: link });
-  };
-
-  const removeLink = async (id) => {
-    const link = inspirationLinks.find(l => l.id === id);
-    const updated = inspirationLinks.filter(l => l.id !== id);
-    await saveData('inspiration-data-v2', updated, setInspirationLinks);
-    trackEvent('remove_link', { id, url: link?.url });
-  };
-
-  const handlePhotoUpload = (e, itemId, category) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const photoData = reader.result;
-        if (itemId) {
-          updateWardrobeItem(category, itemId, { photo: photoData });
-        } else {
-          setNewItem({...newItem, photo: photoData});
-        }
-        trackEvent('upload_photo', { itemId: itemId || null, category });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removePhoto = (itemId, category) => {
-    if (itemId) {
-      updateWardrobeItem(category, itemId, { photo: '' });
-    } else {
-      setNewItem({...newItem, photo: ''});
-    }
-    trackEvent('remove_photo', { itemId: itemId || null, category });
-  };
-
-  // ---- Utilities & stats ----
-  const getStats = () => {
-    const all = Object.values(wardrobeItems).flat();
-    const owned = all.filter(i => i.status === 'есть').length;
-    const needed = all.filter(i => i.status !== 'есть').length;
-    const critical = all.filter(i => i.priority === 'критичный' || i.priority === 'КРИТИЧНО').length;
-    const total = all.length;
-    const completion = total > 0 ? Math.round((owned / total) * 100) : 0;
-    const shoppingTotal = shoppingList.reduce((sum, item) => {
-      const match = item.price?.match(/€(\d+)/);
-      return sum + (match ? parseInt(match[1]) : 0);
-    }, 0);
-    return { total, owned, needed, critical, completion, shoppingTotal };
-  };
-
-  const checkOutfit = (outfit) => {
-    const all = Object.values(wardrobeItems).flat();
-    const missing = outfit.items.filter(outfitItem => 
-      !all.some(w => w.name.toLowerCase().includes(outfitItem.toLowerCase()) && w.status === 'есть')
-    );
-    return { complete: missing.length === 0, missing };
-  };
-
-  const exportText = (data, filename) => {
-    const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const exportShopping = () => {
-    const text = shoppingList.map(i => `${i.item} - ${i.priority} - ${i.price} - ${i.category} ${i.purchased ? `(куплено ${i.purchasedDate || ''})` : ''}`).join('\n');
-    exportText(text, 'shopping-list.txt');
-    trackEvent('export_shopping', { count: shoppingList.length });
-  };
-
-  const exportWardrobe = () => {
-    const text = Object.entries(wardrobeItems).map(([cat, items]) =>
-      `\n=== ${cat.toUpperCase()} ===\n` + items.map(i => `${i.name} - ${i.status} - ${i.priority} - ${i.tags || ''}`).join('\n')
-    ).join('\n');
-    exportText(text, 'wardrobe.txt');
-    trackEvent('export_wardrobe', { categories: Object.keys(wardrobeItems).length });
-  };
-
-  // ---- New analytics reports ----
-  const computeCategoryStats = () => {
-    const cats = Object.entries(wardrobeItems);
-    return cats.map(([cat, items]) => {
-      const total = items.length;
-      const owned = items.filter(i => i.status === 'есть').length;
-      const needed = total - owned;
-      const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
-      return { category: cat, total, owned, needed, percent };
-    });
-  };
-
-  const getTopTags = (topN = 10) => {
-    const all = Object.values(wardrobeItems).flat();
-    const map = {};
-    all.forEach(i => {
-      const tags = (i.tags || '').split(',').map(t => t.trim().toLowerCase()).filter(t => t);
-      tags.forEach(t => map[t] = (map[t] || 0) + 1);
-    });
-    return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0, topN).map(([tag,count]) => ({tag, count}));
-  };
-
-  const getPriorityStats = () => {
-    const all = Object.values(wardrobeItems).flat();
-    const map = {};
-    all.forEach(i => {
-      const p = (i.priority || 'низкий').toString();
-      map[p] = (map[p] || 0) + 1;
-    });
-    return Object.entries(map).map(([priority, count]) => ({ priority, count }));
-  };
-
-  const getPurchaseHistoryLast = (n = 10) => {
-    const purchased = shoppingList.filter(i => i.purchased).slice();
-    purchased.sort((a,b) => {
-      const da = a.purchasedDate ? new Date(a.purchasedDate).getTime() : a.id;
-      const db = b.purchasedDate ? new Date(b.purchasedDate).getTime() : b.id;
-      return db - da;
-    });
-    return purchased.slice(0, n);
-  };
-
-  const getPurchasesByMonth = () => {
-    const purchased = shoppingList.filter(i => i.purchased && i.purchasedDate);
-    const map = {};
-    purchased.forEach(p => {
-      const d = new Date(p.purchasedDate);
-      if (isNaN(d)) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      map[key] = map[key] || [];
-      map[key].push(p);
-    });
-    const entries = Object.entries(map).sort((a,b)=>b[0].localeCompare(a[0])); // recent first
-    return entries.map(([month, items]) => ({ month, items }));
-  };
-
-  const getRecommendations = () => {
-    const recs = [];
-    // Проверка базовых вещей: если в категории нет owned >=1 -> рекомендуем
-    const catStats = computeCategoryStats();
-    const basicsMissing = catStats.filter(cs => cs.owned === 0).map(cs => cs.category);
-    if (basicsMissing.length > 0) {
-      recs.push({ title: 'Проверка базовых вещей', text: `В категориях отсутствуют вещи: ${basicsMissing.join(', ')}.` });
-    } else {
-      recs.push({ title: 'Проверка базовых вещей', text: 'Базовые категории заполнены.' });
-    }
-    // Критичные покупки
-    const criticals = shoppingList.filter(s => {
-      const p = (s.priority || '').toString().toLowerCase();
-      return p.includes('крит') || p.includes('критичный');
-    });
-    if (criticals.length > 0) {
-      recs.push({ title: 'Критичные покупки', text: criticals.map(c => `${c.item} ${c.price ? `(${c.price})` : ''}`).join('; ') });
-    } else {
-      recs.push({ title: 'Критичные покупки', text: 'Нет критичных покупок.' });
-    }
-    // Незавершённые образы
-    const incomplete = outfits.map(o => ({ ...o, check: checkOutfit(o) })).filter(o => !o.check.complete);
-    if (incomplete.length > 0) {
-      recs.push({ title: 'Незавершённые образы', text: incomplete.map(i => `${i.name}: не хватает ${i.check.missing.join(', ')}`).join('\n') });
-    } else {
-      recs.push({ title: 'Незавершённые образы', text: 'Все образы собраны.' });
-    }
-    return recs;
-  };
-
-  const exportFullReport = () => {
-    const s = getStats();
-    const cat = computeCategoryStats();
-    const tags = getTopTags(50);
-    const pr = getPriorityStats();
-    const purchases = getPurchaseHistoryLast(50);
-    const purchasesByMonth = getPurchasesByMonth();
-    const recs = getRecommendations();
-
-    let txt = '';
-    txt += `Отчёт: Мой гардероб\nДата: ${new Date().toISOString()}\n\n`;
-    txt += `Общие показатели:\n`;
-    txt += `- Всего вещей: ${s.total}\n- Есть: ${s.owned}\n- Нужно: ${s.needed}\n- Критичных: ${s.critical}\n- Готовность: ${s.completion}%\n- Бюджет в шопинг-листе (приблизительно): €${s.shoppingTotal}+\n\n`;
-
-    txt += `Статистика по категориям:\n`;
-    cat.forEach(c => {
-      txt += `- ${c.category}: ${c.owned}/${c.total} (процент: ${c.percent}%)\n`;
-    });
-    txt += `\nТоп тегов:\n`;
-    tags.forEach(t => txt += `- ${t.tag}: ${t.count}\n`);
-    txt += `\nСтатистика по приоритетам:\n`;
-    pr.forEach(p => txt += `- ${p.priority}: ${p.count}\n`);
-
-    txt += `\nИстория покупок (последние ${purchases.length}):\n`;
-    purchases.forEach(p => txt += `- ${p.item} ${p.price ? `(${p.price})` : ''} куплено: ${p.purchasedDate || 'нет даты'}\n`);
-
-    txt += `\nПокупки по месяцам:\n`;
-    purchasesByMonth.forEach(m => {
-      txt += `\n${m.month}:\n`;
-      m.items.forEach(it => txt += `  - ${it.item} (${it.purchasedDate || ''})\n`);
-    });
-
-    txt += `\nРекомендации:\n`;
-    getRecommendations().forEach(r => {
-      txt += `\n${r.title}:\n${r.text}\n`;
-    });
-
-    exportText(txt, 'wardrobe-full-report.txt');
-    trackEvent('export_full_report', { totalItems: s.total, shoppingTotal: s.shoppingTotal });
-  };
-
-  // ---- UI helpers ----
-  const categories = [
-    { id: 'all', name: 'Все' },
-    { id: 'suits', name: 'Костюмы' },
-    { id: 'shirts', name: 'Рубашки' },
-    { id: 'knitwear', name: 'Трикотаж' },
-    { id: 'polo', name: 'Поло' },
-    { id: 'pants', name: 'Брюки' },
-    { id: 'shoes', name: 'Обувь' },
-    { id: 'accessories', name: 'Аксессуары' }
-  ];
-
-  const getPriorityColor = (p) => {
-    if (p === 'критичный' || p === 'КРИТИЧНО') return 'bg-red-900 text-red-100';
-    if (p === 'высокий' || p === 'ВЫСОКИЙ') return 'bg-orange-900 text-orange-100';
-    if (p === 'средний' || p === 'СРЕДНИЙ') return 'bg-yellow-900 text-yellow-100';
-    return 'bg-gray-700 text-gray-300';
-  };
-
-  const getStatusBadge = (s) => {
-    if (s === 'нужен' || s === 'нужна' || s === 'нужны') 
-      return <span className="px-2 py-1 bg-red-900 text-red-100 rounded text-xs">Нужно</span>;
-    return <span className="px-2 py-1 bg-green-900 text-green-100 rounded text-xs">Есть</span>;
-  };
-
-  if (isLoading) return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="text-white text-xl">Загрузка...</div>
-    </div>
-  );
-
-  const stats = getStats();
-
-  // ---- Rendering analytics dashboard ----
-  const renderAnalytics = () => {
-    const catStats = computeCategoryStats();
-    const topTags = getTopTags(10);
-    const priorityStats = getPriorityStats();
-    const recentPurchases = getPurchaseHistoryLast(10);
-    const purchasesByMonth = getPurchasesByMonth();
-    const recs = getRecommendations();
-
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-white text-xl font-bold flex items-center gap-2"><TrendingUp className="w-5 h-5" />Аналитика</h2>
-          <div className="flex gap-2">
-            <button onClick={exportFullReport} className="px-3 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded flex items-center gap-2">
-              <Download className="w-4 h-4" /> Скачать отчёт
-            </button>
-            <button onClick={() => { setShowAnalytics(false); trackEvent('analytics_close'); }} className="px-3 py-2 bg-gray-700 text-white rounded">Закрыть</button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-gray-400 text-xs">Общее</div>
-            <div className="text-white text-2xl font-bold">{stats.total} вещей</div>
-            <div className="flex gap-2 mt-3">
-              <div className="text-green-400 font-bold">{stats.owned} есть</div>
-              <div className="text-red-400 font-bold">{stats.needed} нужно</div>
-            </div>
-            <div className="mt-3">
-              <div className="text-gray-400 text-xs">Готовность</div>
-              <div className="w-full bg-gray-700 h-3 rounded mt-1 overflow-hidden">
-                <div className="bg-blue-500 h-3" style={{ width: `${stats.completion}%` }} />
-              </div>
-              <div className="text-sm mt-1">{stats.completion}%</div>
-            </div>
-          </div>
-
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-gray-400 text-xs">В шопинг-листе (не куплено)</div>
-            <div className="text-yellow-300 text-2xl font-bold">{shoppingList.filter(i => !i.purchased).length}</div>
-            <div className="text-gray-400 text-xs mt-2">Примерный бюджет: €{stats.shoppingTotal}+</div>
-            <div className="mt-3">
-              <div className="text-gray-400 text-xs">Критичных</div>
-              <div className="text-red-500 text-2xl font-bold">{stats.critical}</div>
-            </div>
-          </div>
-
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-gray-400 text-xs">События аналитики</div>
-            <div className="text-white font-bold text-lg mt-2">{analyticsEvents.length}</div>
-            <div className="text-gray-400 text-xs mt-2">Последние события:</div>
-            <div className="max-h-28 overflow-auto text-sm text-gray-300 mt-1">
-              {analyticsEvents.slice(-8).reverse().map(e => (
-                <div key={e.id} className="text-xs border-b border-gray-700 py-1">
-                  <div className="text-gray-300">{e.type}</div>
-                  <div className="text-gray-500 text-[11px]">{new Date(e.ts).toLocaleString()}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <h3 className="text-white font-medium mb-2">Статистика по категориям</h3>
-            <div className="space-y-2">
-              {catStats.map(c => (
-                <div key={c.category} className="space-y-1">
-                  <div className="flex justify-between text-sm text-gray-300">
-                    <div>{c.category}</div>
-                    <div>{c.owned}/{c.total} ({c.percent}%)</div>
-                  </div>
-                  <div className="w-full bg-gray-700 h-3 rounded overflow-hidden">
-                    <div className="bg-green-500 h-3" style={{ width: `${c.percent}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <h3 className="text-white font-medium mb-2">Популярные теги</h3>
-            <div className="space-y-2">
-              {topTags.length === 0 && <div className="text-gray-400">Тегов нет</div>}
-              {topTags.map(t => (
-                <div key={t.tag} className="flex justify-between text-sm text-gray-300">
-                  <div>#{t.tag}</div>
-                  <div className="text-yellow-300 font-bold">{t.count}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <h4 className="text-white font-medium mb-2">Статистика по приоритетам</h4>
-            <div className="space-y-2">
-              {priorityStats.map(p => (
-                <div key={p.priority} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${p.priority === 'критичный' || p.priority.toLowerCase().includes('крит') ? 'bg-red-500' : p.priority.toLowerCase().includes('высок') ? 'bg-orange-500' : p.priority.toLowerCase().includes('средн') ? 'bg-yellow-500' : 'bg-gray-500'}`} />
-                    <div className="text-sm text-gray-300">{p.priority}</div>
-                  </div>
-                  <div className="text-white font-bold">{p.count}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 md:col-span-2">
-            <h4 className="text-white font-medium mb-2">Рекомендации</h4>
-            <div className="space-y-2">
-              {recs.map((r, idx) => (
-                <div key={idx} className="bg-gray-900 p-3 rounded border border-gray-700">
-                  <div className="text-sm text-yellow-200 font-semibold">{r.title}</div>
-                  <div className="text-sm text-gray-300 whitespace-pre-wrap mt-1">{r.text}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <h4 className="text-white font-medium mb-2">История покупок (последние 10)</h4>
-            <div className="space-y-2 text-sm">
-              {recentPurchases.length === 0 && <div className="text-gray-400">Нет купленных вещей</div>}
-              {recentPurchases.map(p => (
-                <div key={p.id} className="flex justify-between items-center">
-                  <div className="text-gray-200">{p.item}</div>
-                  <div className="text-gray-400 text-xs">{p.purchasedDate || '—'}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <h4 className="text-white font-medium mb-2">Покупки по месяцам</h4>
-            <div className="space-y-2 text-sm">
-              {purchasesByMonth.length === 0 && <div className="text-gray-400">Нет данных по месяцам</div>}
-              {purchasesByMonth.map(m => (
-                <div key={m.month} className="border-b border-gray-700 pb-2 mb-2">
-                  <div className="text-yellow-300 font-semibold">{m.month}</div>
-                  {m.items.map(it => <div key={it.id} className="text-gray-300 text-sm">- {it.item} ({it.purchasedDate})</div>)}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071226 0%,var(--bg) 100%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
+    .app{max-width:1100px;margin:24px auto;padding:16px;color:#fff;}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:16px;}
+    h1{margin:0;font-size:20px;color:#fff}
+    .subtitle{color:var(--muted);font-size:13px}
+    .tabs{display:flex;gap:8px;margin:12px 0;}
+    .tab{padding:10px 14px;background:transparent;border:1px solid transparent;border-radius:10px;color:var(--muted);cursor:pointer}
+    .tab.active{background:rgba(255,255,255,0.03);border-color:var(--card-border);color:#fff}
+    .grid{display:grid;gap:12px}
+    .cols-3{grid-template-columns:repeat(3,1fr)}
+    .cols-2{grid-template-columns:repeat(2,1fr)}
+    .panel{background:var(--panel);border:1px solid var(--card-border);padding:12px;border-radius:10px}
+    .controls{display:flex;gap:8px;align-items:center}
+    input[type="text"], input[type="date"], select, textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#0b1220;color:#fff}
+    textarea{min-height:68px;resize:vertical}
+    .btn{padding:8px 12px;border-radius:8px;border:0;cursor:pointer}
+    .btn.primary{background:var(--accent);color:#fff}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+    .small{font-size:13px;color:var(--muted)}
+    .list-item{display:flex;gap:12px;align-items:flex-start;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+    .item-photo{width:64px;height:64px;object-fit:cover;border-radius:6px;background:#0b1220;border:1px solid rgba(255,255,255,0.03)}
+    .tag{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,0.03);color:var(--muted);font-size:12px}
+    .badge-green{background:#064e3b;color:#bbf7d0;padding:4px 8px;border-radius:999px;font-size:12px}
+    .badge-red{background:#7f1d1d;color:#ffd7d7;padding:4px 8px;border-radius:999px;font-size:12px}
+    .priority-pill{padding:4px 8px;border-radius:999px;font-size:12px}
+    .prio-critical{background:#7f1d1d;color:#fff}
+    .prio-high{background:#9a3412;color:#fff}
+    .prio-mid{background:#713f12;color:#fff}
+    .prio-low{background:#374151;color:#fff}
+    .muted{color:var(--muted)}
+    .flex{display:flex;gap:8px;align-items:center}
+    .ml-auto{margin-left:auto}
+    .progress{height:10px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,#10b981,#06b6d4)}
+    .kpi{font-size:20px;font-weight:700}
+    .chart-row{display:flex;gap:8px;flex-wrap:wrap}
+    .card{padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid rgba(255,255,255,0.02)}
+    footer{margin-top:20px;color:var(--muted);font-size:13px;text-align:center}
+    .telegram-btn{display:inline-flex;gap:8px;align-items:center;background:#0088cc;padding:8px 12px;border-radius:8px;color:#fff;text-decoration:none}
+    .analytics-toggle{font-size:16px;padding:6px 10px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.03);cursor:pointer;color:var(--muted)}
+    code{background:rgba(255,255,255,0.02);padding:2px 4px;border-radius:4px;color:#e6eef6}
+    .flex-col{display:flex;flex-direction:column}
+    /* responsive */
+    @media (max-width:900px){.cols-3{grid-template-columns:repeat(1,1fr)}.cols-2{grid-template-columns:repeat(1,1fr)}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Мой гардероб — Web</h1>
+        <div class="subtitle">Статический интерфейс для работы + аналитика. Можно разместить на GitHub Pages.</div>
       </div>
-    );
-  };
+      <div class="ml-auto flex" style="align-self:center">
+        <!-- Replace BOT_USERNAME below -->
+        <a id="tgOpen" class="telegram-btn" href="#" target="_blank" rel="noopener noreferrer">Открыть в Telegram</a>
+      </div>
+    </header>
 
-  // ---- Rendering wardrobe list (original) ----
-  const renderWardrobe = () => {
-    let items = selectedCategory === 'all' 
-      ? Object.entries(wardrobeItems).flatMap(([cat, its]) => its.map(i => ({...i, category: cat})))
-      : (wardrobeItems[selectedCategory] || []).map(i=>({...i, category: selectedCategory}));
+    <div class="tabs" id="mainTabs">
+      <button class="tab active" data-tab="wardrobe">Гардероб</button>
+      <button class="tab" data-tab="shopping">Шопинг</button>
+      <button class="tab" data-tab="outfits">Образы</button>
+      <button class="tab" data-tab="inspiration">Идеи</button>
+      <button class="tab" data-tab="analytics">Аналитика</button>
+    </div>
 
-    if (searchQuery) {
-      items = items.filter(i => 
-        i.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        i.tags?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (filterStatus === 'owned') items = items.filter(i => i.status === 'есть');
-    if (filterStatus === 'needed') items = items.filter(i => i.status !== 'есть');
-    if (filterPriority !== 'all') items = items.filter(i => i.priority === filterPriority);
-
-    return (
-      <div className="space-y-4">
-        {showStats && (
-          <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-lg p-4 border border-gray-600">
-            <div className="flex justify-between mb-3">
-              <h3 className="text-white font-bold flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Статистика
-              </h3>
-              <button onClick={() => setShowStats(false)} className="text-gray-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <div className="bg-gray-900 rounded p-3">
-                <div className="text-gray-400 text-xs">Всего вещей</div>
-                <div className="text-white text-2xl font-bold">{stats.total}</div>
-              </div>
-              <div className="bg-gray-900 rounded p-3">
-                <div className="text-gray-400 text-xs">Есть</div>
-                <div className="text-green-400 text-2xl font-bold">{stats.owned}</div>
-              </div>
-              <div className="bg-gray-900 rounded p-3">
-                <div className="text-gray-400 text-xs">Нужно купить</div>
-                <div className="text-red-400 text-2xl font-bold">{stats.needed}</div>
-              </div>
-              <div className="bg-gray-900 rounded p-3">
-                <div className="text-gray-400 text-xs">Критичных</div>
-                <div className="text-red-500 text-2xl font-bold">{stats.critical}</div>
-              </div>
-              <div className="bg-gray-900 rounded p-3">
-                <div className="text-gray-400 text-xs">Готовность</div>
-                <div className="text-blue-400 text-2xl font-bold">{stats.completion}%</div>
-              </div>
-              <div className="bg-gray-900 rounded p-3">
-                <div className="text-gray-400 text-xs">В шопинг-листе</div>
-                <div className="text-orange-400 text-2xl font-bold">{shoppingList.filter(i => !i.purchased).length}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 space-y-3">
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Поиск..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 bg-gray-900 text-white rounded border border-gray-700"
-              />
-            </div>
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="px-3 bg-gray-700 rounded">
-                <X className="w-4 h-4 text-white" />
-              </button>
-            )}
-          </div>
-
-          <div className="flex gap-2 flex-wrap">
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700 text-sm">
-              <option value="all">Все статусы</option>
-              <option value="owned">Только есть</option>
-              <option value="needed">Только нужно</option>
-            </select>
-
-            <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}
-              className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700 text-sm">
-              <option value="all">Все приоритеты</option>
-              <option value="критичный">Критичный</option>
-              <option value="высокий">Высокий</option>
-              <option value="средний">Средний</option>
-              <option value="низкий">Низкий</option>
-            </select>
-
-            <div className="flex gap-1 ml-auto">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded ${viewMode === 'list' ? 'bg-red-900 text-white' : 'bg-gray-700 text-gray-300'}`}
-                title="Список"
-              >
-                <List className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded ${viewMode === 'grid' ? 'bg-red-900 text-white' : 'bg-gray-700 text-gray-300'}`}
-                title="Сетка"
-              >
-                <Grid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => { setShowAnalytics(s => !s); trackEvent('toggle_analytics', { open: !showAnalytics }); }}
-                className={`p-2 rounded ${showAnalytics ? 'bg-blue-700 text-white' : 'bg-gray-700 text-gray-300'}`}
-                title="Аналитика"
-              >
-                📊
-              </button>
-            </div>
-
-            <button onClick={exportWardrobe}
-              className="px-3 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded text-sm flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Экспорт
-            </button>
-          </div>
-        </div>
-
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {categories.map(cat => (
-            <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 rounded-lg whitespace-nowrap transition ${
-                selectedCategory === cat.id ? 'bg-red-900 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}>
-              {cat.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Add item card omitted for brevity — kept identical to original for UI parity */}
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h3 className="text-white font-medium mb-3">Добавить вещь</h3>
-          <div className="space-y-3">
-            <input type="text" placeholder="Название" value={newItem.name}
-              onChange={(e) => setNewItem({...newItem, name: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-            
-            <div className="grid grid-cols-3 gap-2">
-              <select value={newItem.category} onChange={(e) => setNewItem({...newItem, category: e.target.value})}
-                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
-                {categories.filter(c => c.id !== 'all').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+    <main id="root">
+      <!-- Wardrobe view -->
+      <section id="wardrobe" class="panel">
+        <div class="flex" style="align-items:flex-start">
+          <div style="flex:1">
+            <div class="flex" style="gap:8px;margin-bottom:8px">
+              <input id="search" type="text" placeholder="Поиск по названию или тегам" />
+              <select id="filterStatus">
+                <option value="all">Все статусы</option>
+                <option value="owned">Только есть</option>
+                <option value="needed">Только нужно</option>
               </select>
-              <select value={newItem.status} onChange={(e) => setNewItem({...newItem, status: e.target.value})}
-                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
-                <option value="есть">Есть</option>
-                <option value="нужен">Нужен</option>
-              </select>
-              <select value={newItem.priority} onChange={(e) => setNewItem({...newItem, priority: e.target.value})}
-                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
-                <option value="низкий">Низкий</option>
-                <option value="средний">Средний</option>
-                <option value="высокий">Высокий</option>
+              <select id="filterPriority">
+                <option value="all">Все приоритеты</option>
                 <option value="критичный">Критичный</option>
+                <option value="высокий">Высокий</option>
+                <option value="средний">Средний</option>
+                <option value="низкий">Низкий</option>
               </select>
-            </div>
-            
-            <input type="text" placeholder="Теги (через запятую)" value={newItem.tags}
-              onChange={(e) => setNewItem({...newItem, tags: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-            
-            <textarea placeholder="Заметки" value={newItem.notes} rows="2"
-              onChange={(e) => setNewItem({...newItem, notes: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
 
-            <div className="space-y-2">
-              <div className="text-gray-400 text-sm">Фото вещи</div>
-              {newItem.photo ? (
-                <div className="relative">
-                  <img src={newItem.photo} alt="Preview" className="w-full h-40 object-cover rounded border border-gray-700" />
-                  <button
-                    onClick={() => removePhoto()}
-                    className="absolute top-2 right-2 p-1 bg-red-900 hover:bg-red-800 rounded"
-                  >
-                    <X className="w-4 h-4 text-white" />
-                  </button>
-                </div>
-              ) : (
-                <label className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded cursor-pointer border-2 border-dashed border-gray-600">
-                  <Camera className="w-5 h-5" />
-                  <span>Загрузить фото</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handlePhotoUpload(e)}
-                    className="hidden"
-                  />
-                </label>
-              )}
+              <button id="toggleView" class="analytics-toggle">📊 Аналитика</button>
+
+              <div class="ml-auto flex">
+                <button id="exportWardrobeBtn" class="btn ghost">Экспорт</button>
+                <button id="clearAllBtn" class="btn ghost">Сброс</button>
+              </div>
             </div>
 
-            <button onClick={addWardrobeItem}
-              className="w-full px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded transition">
-              Добавить
-            </button>
+            <div class="panel" style="margin-bottom:12px">
+              <div style="display:flex;gap:12px;align-items:center">
+                <h3 style="margin:0">Добавить вещь</h3>
+                <div class="muted" style="font-size:13px">Заполните поля и нажмите Добавить</div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 120px 120px;gap:8px;margin-top:8px">
+                <input id="newName" type="text" placeholder="Название (пример: Костюм черный)" />
+                <select id="newCategory">
+                  <option value="suits">Костюмы</option>
+                  <option value="shirts">Рубашки</option>
+                  <option value="knitwear">Трикотаж</option>
+                  <option value="polo">Поло</option>
+                  <option value="pants">Брюки</option>
+                  <option value="shoes">Обувь</option>
+                  <option value="accessories">Аксессуары</option>
+                </select>
+                <select id="newStatus">
+                  <option value="есть">Есть</option>
+                  <option value="нужен">Нужен</option>
+                </select>
+                <input id="newTags" type="text" placeholder="Теги (через запятую)" style="grid-column:1/span2" />
+                <select id="newPriority" style="grid-column:3">
+                  <option value="низкий">Низкий</option>
+                  <option value="средний">Средний</option>
+                  <option value="высокий">Высокий</option>
+                  <option value="критичный">Критичный</option>
+                </select>
+                <input id="newNotes" type="text" placeholder="Заметки" style="grid-column:1/span3" />
+                <input id="newPhoto" type="file" accept="image/*" style="grid-column:1/span2" />
+                <button id="addItemBtn" class="btn primary" style="grid-column:3">Добавить</button>
+              </div>
+            </div>
+
+            <div id="itemsList" class="grid" style="margin-top:12px"></div>
+
           </div>
-        </div>
 
-        {/* Items list / grid */}
-        <div className={viewMode === 'list' ? 'grid gap-3' : 'hidden'}>
-          {items.map(item => (
-            <div key={item.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-              {editingItem === item.id ? (
-                <div className="space-y-3">
-                  <input type="text" value={item.name}
-                    onChange={(e) => {
-                      const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                        (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, name: e.target.value} : i)};
-                      setWardrobeItems(u);
-                    }}
-                    className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-                  
-                  <div className="grid grid-cols-2 gap-2">
-                    <select value={item.status}
-                      onChange={(e) => {
-                        const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                          (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, status: e.target.value} : i)};
-                        setWardrobeItems(u);
-                      }}
-                      className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
-                      <option value="есть">Есть</option>
-                      <option value="нужен">Нужен</option>
-                      <option value="нужна">Нужна</option>
-                      <option value="нужны">Нужны</option>
-                    </select>
-                    <select value={item.priority}
-                      onChange={(e) => {
-                        const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                          (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, priority: e.target.value} : i)};
-                        setWardrobeItems(u);
-                      }}
-                      className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
-                      <option value="низкий">Низкий</option>
-                      <option value="средний">Средний</option>
-                      <option value="высокий">Высокий</option>
-                      <option value="критичный">Критичный</option>
-                    </select>
-                  </div>
-
-                  <input type="text" placeholder="Теги" value={item.tags || ''}
-                    onChange={(e) => {
-                      const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                        (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, tags: e.target.value} : i)};
-                      setWardrobeItems(u);
-                    }}
-                    className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-
-                  <textarea placeholder="Заметки" value={item.notes || ''} rows="2"
-                    onChange={(e) => {
-                      const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                        (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, notes: e.target.value} : i)};
-                      setWardrobeItems(u);
-                    }}
-                    className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-
-                  <div className="space-y-2">
-                    <div className="text-gray-400 text-sm">Фото</div>
-                    {item.photo ? (
-                      <div className="relative">
-                        <img src={item.photo} alt={item.name} className="w-full h-40 object-cover rounded" />
-                        <button
-                          onClick={() => {
-                            const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                              (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, photo: ''} : i)};
-                            setWardrobeItems(u);
-                          }}
-                          className="absolute top-2 right-2 p-1 bg-red-900 hover:bg-red-800 rounded"
-                        >
-                          <X className="w-4 h-4 text-white" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded cursor-pointer">
-                        <Camera className="w-5 h-5" />
-                        <span>Загрузить фото</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handlePhotoUpload(e, item.id, item.category || selectedCategory)}
-                          className="hidden"
-                        />
-                      </label>
-                    )}
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <button onClick={() => updateWardrobeItem(item.category || selectedCategory, item.id, item)}
-                      className="flex-1 px-4 py-2 bg-green-900 hover:bg-green-800 text-white rounded flex items-center justify-center gap-2">
-                      <Save className="w-4 h-4" />
-                      Сохранить
-                    </button>
-                    <button onClick={() => setEditingItem(null)}
-                      className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded">
-                      Отмена
-                    </button>
-                  </div>
+          <!-- Right column: stats & categories -->
+          <aside style="width:320px">
+            <div class="panel">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div class="small muted">Статистика</div>
+                  <div class="kpi" id="kpiTotal">—</div>
                 </div>
-              ) : (
-                <div className="flex items-start gap-4">
-                  {item.photo && (
-                    <img src={item.photo} alt={item.name} className="w-24 h-24 object-cover rounded flex-shrink-0" />
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-white font-medium">{item.name}</h3>
-                      {item.count && <span className="text-gray-400 text-sm">({item.count} шт)</span>}
-                      {item.signature && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
-                    </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      {getStatusBadge(item.status)}
-                      <span className={`px-2 py-1 rounded text-xs ${getPriorityColor(item.priority)}`}>
-                        {item.priority}
-                      </span>
-                    </div>
-                    {item.tags && (
-                      <div className="flex items-center gap-1 text-xs text-gray-400 mb-1">
-                        <Tag className="w-3 h-3" />
-                        {item.tags}
-                      </div>
-                    )}
-                    {item.notes && (
-                      <div className="text-xs text-gray-400 italic">{item.notes}</div>
-                    )}
-                  </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => setEditingItem(item.id)} className="p-2 hover:bg-blue-900 rounded">
-                      <Edit2 className="w-4 h-4 text-gray-400 hover:text-blue-400" />
-                    </button>
-                    <button onClick={() => deleteWardrobeItem(item.category || selectedCategory, item.id)}
-                      className="p-2 hover:bg-red-900 rounded">
-                      <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-400" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {viewMode === 'grid' && !editingItem && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {items.map(item => (
-              <div key={item.id} className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-red-900 transition">
-                <div className="relative">
-                  {item.photo ? (
-                    <img src={item.photo} alt={item.name} className="w-full h-48 object-cover" />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-700 flex items-center justify-center">
-                      <Image className="w-12 h-12 text-gray-600" />
-                    </div>
-                  )}
-                  {item.signature && (
-                    <div className="absolute top-2 right-2 bg-yellow-500 rounded-full p-1">
-                      <Star className="w-4 h-4 text-yellow-900 fill-yellow-900" />
-                    </div>
-                  )}
-                  <div className="absolute bottom-2 left-2 right-2 flex gap-1">
-                    {getStatusBadge(item.status)}
-                  </div>
-                </div>
-                <div className="p-3">
-                  <h3 className="text-white font-medium text-sm mb-2 line-clamp-2">{item.name}</h3>
-                  <div className="flex items-center justify-between">
-                    <span className={`px-2 py-1 rounded text-xs ${getPriorityColor(item.priority)}`}>
-                      {item.priority}
-                    </span>
-                    <div className="flex gap-1">
-                      <button onClick={() => setEditingItem(item.id)} className="p-1 hover:bg-blue-900 rounded">
-                        <Edit2 className="w-3 h-3 text-gray-400" />
-                      </button>
-                      <button onClick={() => deleteWardrobeItem(item.category || selectedCategory, item.id)}
-                        className="p-1 hover:bg-red-900 rounded">
-                        <Trash2 className="w-3 h-3 text-gray-400" />
-                      </button>
-                    </div>
-                  </div>
-                  {item.tags && (
-                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
-                      <Tag className="w-3 h-3" />
-                      <span className="line-clamp-1">{item.tags}</span>
-                    </div>
-                  )}
+                <div style="text-align:right">
+                  <div class="small muted">Готовность</div>
+                  <div id="kpiCompletion" class="kpi">—</div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-
-        {items.length === 0 && (
-          <div className="text-center text-gray-400 py-8">
-            Ничего не найдено. Попробуйте изменить фильтры.
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderShoppingList = () => {
-    const activePurchases = shoppingList.filter(i => !i.purchased);
-    const completedPurchases = shoppingList.filter(i => i.purchased);
-
-    return (
-      <div className="space-y-4">
-        <div className="bg-gradient-to-r from-yellow-900 to-orange-900 rounded-lg p-4">
-          <div className="text-white font-bold text-lg mb-1">Бюджет на покупки</div>
-          <div className="text-yellow-200 text-3xl font-bold">€{stats.shoppingTotal}+</div>
-          <div className="text-yellow-200 text-sm mt-1">Активных покупок: {activePurchases.length}</div>
-        </div>
-
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h3 className="text-white font-medium mb-3">Добавить покупку</h3>
-          <div className="space-y-3">
-            <input type="text" placeholder="Что купить" value={newShop.item}
-              onChange={(e) => setNewShop({...newShop, item: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-            
-            <div className="grid grid-cols-2 gap-2">
-              <select value={newShop.priority} onChange={(e) => setNewShop({...newShop, priority: e.target.value})}
-                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
-                <option value="КРИТИЧНО">Критично</option>
-                <option value="ВЫСОКИЙ">Высокий</option>
-                <option value="СРЕДНИЙ">Средний</option>
-                <option value="НИЗКИЙ">Низкий</option>
-              </select>
-              <input type="text" placeholder="Цена (€100-200)" value={newShop.price}
-                onChange={(e) => setNewShop({...newShop, price: e.target.value})}
-                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <input type="text" placeholder="Категория" value={newShop.category}
-                onChange={(e) => setNewShop({...newShop, category: e.target.value})}
-                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-              <input type="date" value={newShop.plannedDate}
-                onChange={(e) => setNewShop({...newShop, plannedDate: e.target.value})}
-                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-            </div>
-
-            <button onClick={() => {
-              if (newShop.item) {
-                addShoppingItem(newShop);
-                setNewShop({ item: '', priority: 'СРЕДНИЙ', price: '', category: '', plannedDate: '' });
-              }
-            }}
-              className="w-full px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded">
-              Добавить
-            </button>
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <button onClick={exportShopping}
-            className="px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Экспорт списка
-          </button>
-        </div>
-
-        <div>
-          <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5" />
-            Активные покупки ({activePurchases.length})
-          </h3>
-          <div className="space-y-3">
-            {activePurchases.map(item => (
-              <div key={item.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <button onClick={() => togglePurchased(item.id)}
-                        className="w-6 h-6 rounded border-2 border-gray-600 hover:border-green-500 flex items-center justify-center">
-                        {item.purchased && <Check className="w-4 h-4 text-green-500" />}
-                      </button>
-                      <h3 className="text-white font-medium">{item.item}</h3>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap ml-8">
-                      <span className={`px-2 py-1 rounded text-xs ${getPriorityColor(item.priority)}`}>
-                        {item.priority}
-                      </span>
-                      {item.category && (
-                        <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs">{item.category}</span>
-                      )}
-                      {item.price && (
-                        <span className="text-yellow-500 font-bold text-sm">{item.price}</span>
-                      )}
-                      {item.plannedDate && (
-                        <span className="text-blue-400 text-xs flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {item.plannedDate}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <button onClick={() => removeShoppingItem(item.id)} className="p-2 hover:bg-red-900 rounded">
-                    <Trash2 className="w-4 h-4 text-gray-400" />
-                  </button>
-                </div>
+              <div style="margin-top:10px">
+                <div class="small muted">Категории</div>
+                <div id="categoryStats" style="margin-top:8px"></div>
               </div>
-            ))}
-          </div>
+            </div>
+
+            <div class="panel" style="margin-top:12px">
+              <div class="small muted">Популярные теги</div>
+              <div id="topTags" style="margin-top:8px"></div>
+            </div>
+
+            <div class="panel" style="margin-top:12px">
+              <div class="small muted">Статистика по приоритетам</div>
+              <div id="priorityStats" style="margin-top:8px"></div>
+            </div>
+
+          </aside>
+        </div>
+      </section>
+
+      <!-- Shopping -->
+      <section id="shopping" class="panel" style="display:none">
+        <div class="flex" style="align-items:center;gap:8px">
+          <input id="shopName" type="text" placeholder="Что купить (напр. Туфли черные)" />
+          <select id="shopPriority">
+            <option>КРИТИЧНО</option>
+            <option>ВЫСОКИЙ</option>
+            <option selected>СРЕДНИЙ</option>
+            <option>НИЗКИЙ</option>
+          </select>
+          <input id="shopPrice" type="text" placeholder="Цена (пример: €200-300)" />
+          <button id="addShopBtn" class="btn primary">Добавить</button>
+          <button id="exportShoppingBtn" class="btn ghost ml-auto">Экспорт</button>
         </div>
 
-        {completedPurchases.length > 0 && (
+        <div style="margin-top:12px">
+          <h3>Активные покупки</h3>
+          <div id="activePurchases" style="margin-top:8px"></div>
+
+          <h3 style="margin-top:12px">Куплено</h3>
+          <div id="completedPurchases" style="margin-top:8px"></div>
+        </div>
+      </section>
+
+      <!-- Outfits -->
+      <section id="outfits" class="panel" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 160px;gap:8px">
           <div>
-            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-              <Check className="w-5 h-5 text-green-500" />
-              Куплено ({completedPurchases.length})
-            </h3>
-            <div className="space-y-2">
-              {completedPurchases.map(item => (
-                <div key={item.id} className="bg-gray-800 rounded-lg p-3 border border-green-900 opacity-75">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-green-500" />
-                      <span className="text-gray-300 line-through">{item.item}</span>
-                      {item.purchasedDate && (
-                        <span className="text-xs text-gray-500">({item.purchasedDate})</span>
-                      )}
-                    </div>
-                    <button onClick={() => removeShoppingItem(item.id)} className="p-1 hover:bg-red-900 rounded">
-                      <Trash2 className="w-3 h-3 text-gray-500" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <input id="outfitName" type="text" placeholder="Название образа" />
+            <input id="outfitCategory" type="text" placeholder="Категория (Работа, Тренировки)" />
+            <select id="outfitSeason">
+              <option value="">Сезон</option>
+              <option value="лето">Лето</option>
+              <option value="зима">Зима</option>
+              <option value="весна">Весна</option>
+              <option value="осень">Осень</option>
+              <option value="всесезон">Всесезон</option>
+            </select>
+            <input id="outfitItems" type="text" placeholder="Вещи через запятую" />
+            <button id="addOutfitBtn" class="btn primary" style="margin-top:8px">Создать образ</button>
+          </div>
+          <div>
+            <div class="small muted">Фильтр по сезону</div>
+            <select id="outfitFilter">
+              <option value="all">Все</option>
+              <option value="лето">Лето</option>
+              <option value="зима">Зима</option>
+              <option value="весна">Весна</option>
+              <option value="осень">Осень</option>
+              <option value="всесезон">Всесезон</option>
+            </select>
+            <div style="margin-top:12px">
+              <h4>Список образов</h4>
+              <div id="outfitsList"></div>
             </div>
           </div>
-        )}
-      </div>
-    );
-  };
+        </div>
+      </section>
 
-  const renderOutfits = () => {
-    const filteredOutfits = outfitFilter === 'all' ? outfits : outfits.filter(o => o.season === outfitFilter);
+      <!-- Inspiration -->
+      <section id="inspiration" class="panel" style="display:none">
+        <div style="display:flex;gap:8px">
+          <input id="newLink" type="url" placeholder="https://..." />
+          <button id="addLinkBtn" class="btn primary">Добавить</button>
+          <button id="openRecommendations" class="btn ghost ml-auto">Рекомендации</button>
+        </div>
+        <div id="linksList" style="margin-top:12px"></div>
 
-    return (
-      <div className="space-y-4">
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h3 className="text-white font-medium mb-3">Создать образ</h3>
-          <div className="space-y-3">
-            <input type="text" placeholder="Название образа" value={newOutfit.name}
-              onChange={(e) => setNewOutfit({...newOutfit, name: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-            
-            <div className="grid grid-cols-2 gap-2">
-              <input type="text" placeholder="Категория (Работа, Тренировки)" value={newOutfit.category}
-                onChange={(e) => setNewOutfit({...newOutfit, category: e.target.value})}
-                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-              <select value={newOutfit.season} onChange={(e) => setNewOutfit({...newOutfit, season: e.target.value})}
-                className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
-                <option value="">Сезон</option>
-                <option value="лето">Лето</option>
-                <option value="зима">Зима</option>
-                <option value="весна">Весна</option>
-                <option value="осень">Осень</option>
-                <option value="всесезон">Всесезон</option>
-              </select>
-            </div>
+        <div style="margin-top:12px" class="panel">
+          <h4>Рекомендации</h4>
+          <ul>
+            <li><a target="_blank" rel="noopener noreferrer" href="https://lookastic.com/men/black-turtleneck/how-to-wear-with/blazer">332 образа: водолазка + пиджак</a></li>
+            <li><a target="_blank" rel="noopener noreferrer" href="https://lookastic.com/men/brown-suede-jacket/looks">641 образ: замшевая куртка</a></li>
+          </ul>
+        </div>
+      </section>
 
-            <textarea placeholder="Вещи через запятую" value={newOutfit.items} rows="3"
-              onChange={(e) => setNewOutfit({...newOutfit, items: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-
-            <button onClick={() => {
-              if (newOutfit.name && newOutfit.items) {
-                const items = newOutfit.items.split(',').map(i => i.trim()).filter(i => i);
-                addOutfit({ ...newOutfit, items });
-                setNewOutfit({ name: '', category: '', season: '', items: '' });
-              }
-            }}
-              className="w-full px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded">
-              Создать образ
-            </button>
+      <!-- Analytics -->
+      <section id="analytics" class="panel" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>Аналитика</h3>
+          <div>
+            <button id="downloadReport" class="btn primary">Скачать отчёт</button>
+            <button id="closeAnalytics" class="btn ghost">Вернуться</button>
           </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {['all', 'лето', 'зима', 'весна', 'осень', 'всесезон'].map(s => (
-            <button key={s} onClick={() => setOutfitFilter(s)}
-              className={`px-4 py-2 rounded-lg whitespace-nowrap transition ${
-                outfitFilter === s ? 'bg-red-900 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}>
-              {s === 'all' ? 'Все' : s.charAt(0).toUpperCase() + s.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        <div className="space-y-4">
-          {filteredOutfits.map(outfit => {
-            const check = checkOutfit(outfit);
-            return (
-              <div key={outfit.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <div className="flex justify-between mb-3">
-                  <div>
-                    <h3 className="text-white font-medium mb-1">{outfit.name}</h3>
-                    <div className="flex gap-2">
-                      {outfit.category && (
-                        <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs">{outfit.category}</span>
-                      )}
-                      {outfit.season && (
-                        <span className="px-2 py-1 bg-blue-900 text-blue-200 rounded text-xs">{outfit.season}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {check.complete ? (
-                      <span className="px-3 py-1 bg-green-900 text-green-100 rounded-full text-xs font-bold">
-                        ✓ Готов
-                      </span>
-                    ) : (
-                      <span className="px-3 py-1 bg-orange-900 text-orange-100 rounded-full text-xs font-bold">
-                        Не готов
-                      </span>
-                    )}
-                    <button onClick={() => deleteOutfit(outfit.id)} className="p-1 hover:bg-red-900 rounded">
-                      <Trash2 className="w-4 h-4 text-gray-400" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-gray-400 text-sm font-medium">Состав:</p>
-                  {outfit.items.map((item, idx) => {
-                    const missing = check.missing.includes(item);
-                    return (
-                      <div key={idx} className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${missing ? 'bg-red-500' : 'bg-green-500'}`} />
-                        <span className={`text-sm ${missing ? 'text-red-300' : 'text-gray-300'}`}>
-                          {item}
-                          {missing && ' (нужно купить)'}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {check.missing.length > 0 && (
-                  <div className="mt-3 p-2 bg-red-900 bg-opacity-20 rounded border border-red-900">
-                    <p className="text-red-300 text-sm">
-                      Не хватает: {check.missing.join(', ')}
-                    </p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  const renderInspiration = () => {
-    return (
-      <div className="space-y-4">
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h3 className="text-white font-medium mb-3">Добавить ссылку</h3>
-          <div className="flex gap-2">
-            <input type="url" placeholder="https://..." value={newLink}
-              onChange={(e) => setNewLink(e.target.value)}
-              className="flex-1 px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
-            <button onClick={() => {
-              if (newLink) {
-                addLink(newLink);
-                setNewLink('');
-              }
-            }}
-              className="px-4 py-2 bg-red-900 hover:bg-red-800 text-white rounded">
-              <Plus className="w-5 h-5" />
-            </button>
+        <div style="margin-top:12px" class="grid cols-3">
+          <div class="card">
+            <div class="small muted">Всего вещей</div>
+            <div class="kpi" id="aTotal">—</div>
+            <div class="small muted">Есть</div>
+            <div id="aOwned" class="kpi">—</div>
+          </div>
+          <div class="card">
+            <div class="small muted">Нужно купить</div>
+            <div class="kpi" id="aNeeded">—</div>
+            <div class="small muted">Критичных</div>
+            <div id="aCritical" class="kpi">—</div>
+          </div>
+          <div class="card">
+            <div class="small muted">Бюджет в шопинг-листе</div>
+            <div class="kpi" id="aBudget">—</div>
+            <div class="small muted">Событий аналитики</div>
+            <div id="aEvents" class="kpi">—</div>
           </div>
         </div>
 
-        {inspirationLinks.map(link => (
-          <div key={link.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="flex items-start justify-between">
-              <a href={link.url} target="_blank" rel="noopener noreferrer"
-                className="flex-1 text-red-400 hover:text-red-300 text-sm break-all">
-                {link.url}
-              </a>
-              <button onClick={() => removeLink(link.id)} className="p-2 hover:bg-red-900 rounded ml-2">
-                <Trash2 className="w-4 h-4 text-gray-400" />
-              </button>
-            </div>
+        <div style="margin-top:12px" class="grid cols-2">
+          <div class="card">
+            <h4>Статистика по категориям</h4>
+            <div id="aCatStats"></div>
           </div>
-        ))}
-
-        <div className="bg-gradient-to-r from-red-900 to-red-800 rounded-lg p-4">
-          <h4 className="text-white font-bold mb-2">Рекомендации:</h4>
-          <div className="space-y-2">
-            <a href="https://lookastic.com/men/black-turtleneck/how-to-wear-with/blazer" 
-               target="_blank" rel="noopener noreferrer"
-               className="block text-red-100 hover:text-white text-sm underline">
-              332 образа: водолазка + пиджак
-            </a>
-            <a href="https://lookastic.com/men/brown-suede-jacket/looks" 
-               target="_blank" rel="noopener noreferrer"
-               className="block text-red-100 hover:text-white text-sm underline">
-              641 образ: замшевая куртка
-            </a>
+          <div class="card">
+            <h4>Популярные теги</h4>
+            <div id="aTags"></div>
           </div>
         </div>
-      </div>
-    );
-  };
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white pb-20">
-      <div className="bg-gradient-to-r from-red-900 to-red-800 p-6">
-        <h1 className="text-2xl font-bold mb-2">Мой гардероб Pro</h1>
-        <div className="flex items-center gap-2 text-xs text-red-100">
-          <Save className="w-4 h-4" />
-          <span>Автосохранение • {stats.completion}% готовности</span>
+        <div style="margin-top:12px" class="grid cols-2">
+          <div class="card">
+            <h4>Приоритеты</h4>
+            <div id="aPriority"></div>
+          </div>
+          <div class="card">
+            <h4>История покупок</h4>
+            <div id="aHistory"></div>
+          </div>
         </div>
-      </div>
 
-      <div className="border-b border-gray-800 bg-gray-900 sticky top-0 z-10">
-        <div className="flex overflow-x-auto">
-          {[
-            { id: 'wardrobe', name: 'Гардероб', icon: Package },
-            { id: 'shopping', name: 'Шопинг', icon: ShoppingBag },
-            { id: 'outfits', name: 'Образы', icon: Star },
-            { id: 'inspiration', name: 'Идеи', icon: Lightbulb }
-          ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 min-w-fit px-6 py-4 text-sm font-medium transition ${
-                activeTab === tab.id
-                  ? 'text-red-500 border-b-2 border-red-500 bg-gray-800'
-                  : 'text-gray-400 hover:text-gray-300'
-              }`}>
-              <tab.icon className="w-5 h-5 mx-auto mb-1" />
-              {tab.name}
-            </button>
-          ))}
+        <div style="margin-top:12px" class="panel">
+          <h4>Рекомендации</h4>
+          <div id="aRecs"></div>
         </div>
-      </div>
 
-      <div className="p-4">
-        {activeTab === 'wardrobe' && (showAnalytics ? renderAnalytics() : renderWardrobe())}
-        {activeTab === 'shopping' && renderShoppingList()}
-        {activeTab === 'outfits' && renderOutfits()}
-        {activeTab === 'inspiration' && renderInspiration()}
-      </div>
-    </div>
-  );
+      </section>
+
+    </main>
+
+    <footer>
+      Разместите этот файл как index.html в репозитории GitHub Pages. Перед публикацией замените ссылку Telegram в шапке на ваш бот.
+    </footer>
+  </div>
+
+<script>
+/*
+  Simple wardrobe SPA — single HTML file.
+  - Uses localStorage for persistence
+  - Features: wardrobe, shopping, outfits, inspiration, analytics, export
+  - To enable Telegram link: set BOT_USERNAME variable below
+*/
+
+// ---------- Configuration ----------
+const BOT_USERNAME = 'YOUR_BOT_USERNAME'; // <-- замените на имя вашего бота без @
+const STORAGE_KEYS = {
+  wardrobe: 'wardrobe-data-v2',
+  shopping: 'shopping-data-v2',
+  outfits: 'outfits-data-v2',
+  links: 'inspiration-data-v2',
+  analytics: 'wardrobe-analytics-v1'
 };
 
-export default WardrobeApp;
+// Set Telegram open link
+const tgOpen = document.getElementById('tgOpen');
+if (BOT_USERNAME && BOT_USERNAME !== 'YOUR_BOT_USERNAME') {
+  tgOpen.href = `https://t.me/${BOT_USERNAME}`;
+  tgOpen.textContent = 'Открыть в Telegram';
+} else {
+  tgOpen.href = '#';
+  tgOpen.textContent = 'Откройте бота в Telegram (укажите BOT_USERNAME в index.html)';
+}
+
+// ---------- Safe storage helpers ----------
+function safeParse(s){ try { return JSON.parse(s); } catch(e){ return null; } }
+async function storageGet(key){ try { const v = localStorage.getItem(key); return v? safeParse(v): null; } catch(e){ console.warn('storageGet',e); return null; } }
+async function storageSet(key, data){ try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){ console.warn('storageSet',e); } }
+async function storageInit(){
+  const defWardrobe = {
+    suits:[{id:1,name:'Костюм черный однотонный',status:'есть',priority:'высокий',tags:'офис,формальный',notes:''},
+           {id:5,name:'Костюм темно-синий однотонный',status:'нужен',priority:'критичный',tags:'судейство',notes:''}],
+    shirts:[{id:6,name:'Рубашки белые',count:2,status:'есть',priority:'средний',tags:'базовый',notes:''}],
+    knitwear:[],polo:[],pants:[],shoes:[],accessories:[]
+  };
+  if(!await storageGet(STORAGE_KEYS.wardrobe)) await storageSet(STORAGE_KEYS.wardrobe, defWardrobe);
+  if(!await storageGet(STORAGE_KEYS.shopping)) await storageSet(STORAGE_KEYS.shopping, []);
+  if(!await storageGet(STORAGE_KEYS.outfits)) await storageSet(STORAGE_KEYS.outfits, []);
+  if(!await storageGet(STORAGE_KEYS.links)) await storageSet(STORAGE_KEYS.links, []);
+  if(!await storageGet(STORAGE_KEYS.analytics)) await storageSet(STORAGE_KEYS.analytics, []);
+}
+
+// ---------- Utilities ----------
+function uid(){ return Date.now() + Math.floor(Math.random()*1000); }
+function flattenWardrobe(w){ return Object.values(w).flat(); }
+function formatDate(d){ if(!d) return ''; const dt = new Date(d); if(isNaN(dt)) return d; return dt.toISOString().split('T')[0]; }
+
+// ---------- Core actions (CRUD + analytics tracking) ----------
+async function addItem(item){
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  w[item.category] = w[item.category] || [];
+  w[item.category].push(item);
+  await storageSet(STORAGE_KEYS.wardrobe, w);
+  trackEvent('add_item',{category:item.category,name:item.name,priority:item.priority,status:item.status});
+  renderAll();
+}
+async function deleteItem(category,id){
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  w[category] = (w[category]||[]).filter(i=>i.id!==id);
+  await storageSet(STORAGE_KEYS.wardrobe, w);
+  trackEvent('delete_item',{category,id});
+  renderAll();
+}
+async function updateItem(category,id,updates){
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  w[category] = (w[category]||[]).map(i=> i.id===id? {...i,...updates}:i);
+  await storageSet(STORAGE_KEYS.wardrobe, w);
+  trackEvent('update_item',{category,id,updates});
+  renderAll();
+}
+
+async function addShopping(obj){
+  const list = await storageGet(STORAGE_KEYS.shopping) || [];
+  list.push(obj);
+  await storageSet(STORAGE_KEYS.shopping,list);
+  trackEvent('add_shopping',{item:obj.item,price:obj.price,priority:obj.priority});
+  renderAll();
+}
+async function togglePurchased(id){
+  const list = await storageGet(STORAGE_KEYS.shopping) || [];
+  const newList = list.map(i => i.id===id ? {...i, purchased: !i.purchased, purchasedDate: !i.purchased? formatDate(new Date()): null} : i);
+  await storageSet(STORAGE_KEYS.shopping,newList);
+  trackEvent('toggle_purchased',{id});
+  renderAll();
+}
+async function removeShopping(id){
+  const list = await storageGet(STORAGE_KEYS.shopping) || [];
+  const item = list.find(i=>i.id===id);
+  const newList = list.filter(i=>i.id!==id);
+  await storageSet(STORAGE_KEYS.shopping,newList);
+  trackEvent('remove_shopping',{id,item:item?.item});
+  renderAll();
+}
+
+async function addOutfit(obj){
+  const list = await storageGet(STORAGE_KEYS.outfits) || [];
+  list.push(obj);
+  await storageSet(STORAGE_KEYS.outfits,list);
+  trackEvent('add_outfit',{name:obj.name,items:obj.items});
+  renderAll();
+}
+async function deleteOutfit(id){
+  const list = await storageGet(STORAGE_KEYS.outfits) || [];
+  const o = list.find(x=>x.id===id);
+  const newList = list.filter(i=>i.id!==id);
+  await storageSet(STORAGE_KEYS.outfits,newList);
+  trackEvent('delete_outfit',{id,name:o?.name});
+  renderAll();
+}
+
+async function addLink(url){
+  const list = await storageGet(STORAGE_KEYS.links) || [];
+  list.push({id:uid(),url});
+  await storageSet(STORAGE_KEYS.links,list);
+  trackEvent('add_link',{url});
+  renderAll();
+}
+async function removeLink(id){
+  const list = await storageGet(STORAGE_KEYS.links) || [];
+  const newList = list.filter(l=>l.id!==id);
+  await storageSet(STORAGE_KEYS.links,newList);
+  trackEvent('remove_link',{id});
+  renderAll();
+}
+
+async function trackEvent(type,payload={}){
+  const e = {id:uid(),type,payload,ts:(new Date()).toISOString()};
+  const arr = await storageGet(STORAGE_KEYS.analytics) || [];
+  arr.push(e);
+  await storageSet(STORAGE_KEYS.analytics,arr);
+}
+
+// ---------- Reports & analytics computations ----------
+async function computeStats(){
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  const sList = await storageGet(STORAGE_KEYS.shopping) || [];
+  const all = flattenWardrobe(w);
+  const total = all.length;
+  const owned = all.filter(i=>i.status==='есть').length;
+  const needed = total - owned;
+  const critical = all.filter(i=> (i.priority||'').toString().toLowerCase().includes('крит')).length;
+  const completion = total>0? Math.round((owned/total)*100):0;
+  const shoppingTotal = sList.reduce((sum,i)=>{
+    const m = (i.price||'').toString().match(/€(\d+)/);
+    return sum + (m? parseInt(m[1]):0);
+  },0);
+  return {total,owned,needed,critical,completion,shoppingTotal};
+}
+async function computeCategoryStats(){
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  return Object.entries(w).map(([cat,items])=>{
+    const total = items.length;
+    const owned = items.filter(i=>i.status==='есть').length;
+    const needed = total - owned;
+    const percent = total>0? Math.round((owned/total)*100):0;
+    return {category:cat,total,owned,needed,percent};
+  });
+}
+async function getTopTags(topN=10){
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  const all = flattenWardrobe(w);
+  const map = {};
+  all.forEach(i=>{
+    (i.tags||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean).forEach(t=> map[t]=(map[t]||0)+1);
+  });
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,topN).map(([tag,count])=>({tag,count}));
+}
+async function getPriorityStats(){
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  const all = flattenWardrobe(w);
+  const map = {};
+  all.forEach(i=>{ const p=(i.priority||'низкий').toString(); map[p]=(map[p]||0)+1; });
+  return Object.entries(map).map(([priority,count])=>({priority,count}));
+}
+async function getPurchaseHistoryLast(n=10){
+  const s = await storageGet(STORAGE_KEYS.shopping) || [];
+  const purchased = s.filter(i=>i.purchased).slice().sort((a,b)=>(b.purchasedDate||b.id).localeCompare(a.purchasedDate||a.id));
+  return purchased.slice(0,n);
+}
+async function getPurchasesByMonth(){
+  const s = await storageGet(STORAGE_KEYS.shopping) || [];
+  const purchased = s.filter(i=>i.purchased && i.purchasedDate);
+  const map = {};
+  purchased.forEach(p=>{
+    const d = new Date(p.purchasedDate);
+    if(isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    map[key] = map[key] || [];
+    map[key].push(p);
+  });
+  return Object.entries(map).sort((a,b)=>b[0].localeCompare(a[0])).map(([month,items])=>({month,items}));
+}
+async function getRecommendations(){
+  const cat = await computeCategoryStats();
+  const missingCats = cat.filter(c=>c.owned===0).map(c=>c.category);
+  const s = await storageGet(STORAGE_KEYS.shopping) || [];
+  const criticals = s.filter(i=> (i.priority||'').toString().toLowerCase().includes('крит')).map(i=> `${i.item} ${i.price||''}`);
+  const outfits = await storageGet(STORAGE_KEYS.outfits) || [];
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  const all = flattenWardrobe(w);
+  const incomplete = outfits.map(o=>{
+    const missing = o.items.filter(oi => !all.some(wi => wi.name.toLowerCase().includes(oi.toLowerCase()) && wi.status==='есть'));
+    return {...o,missing};
+  }).filter(o=>o.missing.length>0);
+  return {
+    basics: missingCats,
+    criticals,
+    incomplete
+  };
+}
+
+// ---------- Export full report ----------
+async function exportFullReport(){
+  const s = await computeStats();
+  const cat = await computeCategoryStats();
+  const tags = await getTopTags(50);
+  const pr = await getPriorityStats();
+  const purchases = await getPurchaseHistoryLast(50);
+  const purchasesBy = await getPurchasesByMonth();
+  const rec = await getRecommendations();
+
+  let txt = `Отчёт: Мой гардероб\nДата: ${new Date().toISOString()}\n\n`;
+  txt += `Общие показатели:\nВсего вещей: ${s.total}\nЕсть: ${s.owned}\nНужно: ${s.needed}\nКритичных: ${s.critical}\nГотовность: ${s.completion}%\nБюджет (прибл): €${s.shoppingTotal}+\n\n`;
+  txt += `Статистика по категориям:\n`;
+  cat.forEach(c=> txt+= `- ${c.category}: ${c.owned}/${c.total} (${c.percent}%)\n`);
+  txt += `\nТоп тегов:\n`; tags.forEach(t=> txt+= `- ${t.tag}: ${t.count}\n`);
+  txt += `\nПриоритеты:\n`; pr.forEach(p=> txt+= `- ${p.priority}: ${p.count}\n`);
+  txt += `\nИстория покупок (последние ${purchases.length}):\n`; purchases.forEach(p=> txt+= `- ${p.item} ${p.price||''} куплено: ${p.purchasedDate||''}\n`);
+  txt += `\nПокупки по месяцам:\n`; purchasesBy.forEach(m=>{ txt+= `\n${m.month}:\n`; m.items.forEach(it=> txt+= `  - ${it.item} (${it.purchasedDate})\n`); });
+  txt += `\nРекомендации:\n`; txt += `- Базовые отсутствуют в: ${rec.basics.length? rec.basics.join(', '): 'Нет'}\n`; txt += `- Критичные покупки: ${rec.criticals.length? rec.criticals.join('; '): 'Нет'}\n`;
+  txt += `- Незавершённые образы: ${rec.incomplete.length? rec.incomplete.map(i=> `${i.name}: ${i.missing.join(', ')}`).join('; '): 'Нет'}\n`;
+
+  const blob = new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'wardrobe-full-report.txt'; a.click();
+  URL.revokeObjectURL(url);
+  trackEvent('export_full_report',{total:s.total,shoppingTotal:s.shoppingTotal});
+}
+
+// ---------- Rendering ----------
+async function renderAll(){
+  await renderWardrobeList();
+  await renderKPIs();
+  await renderSideStats();
+  await renderShopping();
+  await renderOutfits();
+  await renderLinks();
+  await renderAnalyticsView();
+}
+
+async function renderWardrobeList(){
+  const container = document.getElementById('itemsList');
+  container.innerHTML = '';
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  const selectedCategory = document.getElementById('newCategory').value;
+  const search = (document.getElementById('search').value||'').toLowerCase();
+  const statusFilter = document.getElementById('filterStatus').value;
+  const prFilter = document.getElementById('filterPriority').value;
+
+  let items = Object.entries(w).flatMap(([cat,its]) => its.map(i => ({...i,category:cat})));
+  if(search){ items = items.filter(i=> i.name.toLowerCase().includes(search) || (i.tags||'').toLowerCase().includes(search)); }
+  if(statusFilter==='owned') items = items.filter(i=> i.status==='есть');
+  if(statusFilter==='needed') items = items.filter(i=> i.status!=='есть');
+  if(prFilter!=='all') items = items.filter(i=> i.priority === prFilter);
+
+  if(items.length===0){ container.innerHTML = '<div class="muted">Ничего не найдено</div>'; return; }
+
+  items.forEach(item=>{
+    const div = document.createElement('div'); div.className='list-item';
+    const img = document.createElement('img'); img.className='item-photo';
+    img.src = item.photo || '';
+    img.alt = item.name;
+    if(!item.photo){ img.style.background = '#071218'; img.style.display='inline-block' }
+    const info = document.createElement('div'); info.style.flex='1';
+    const title = document.createElement('div'); title.innerHTML=`<strong>${item.name}</strong> <span class="muted">(${item.category})</span>`;
+    const meta = document.createElement('div'); meta.className='small muted';
+    const statusBadge = item.status && (item.status!=='есть'? `<span class="badge-red">Нужно</span>`:`<span class="badge-green">Есть</span>`);
+    const prClass = item.priority==='критичный'?'prio-critical': item.priority==='высокий'?'prio-high':item.priority==='средний'?'prio-mid':'prio-low';
+    const priority = `<span class="priority-pill ${prClass}">${item.priority}</span>`;
+    const tags = item.tags? `<div style="margin-top:6px"><span class="tag">#${(item.tags||'').split(',')[0]}</span></div>` : '';
+    meta.innerHTML = `${statusBadge} ${priority} ${item.count? ' — ' + item.count + ' шт':''} ${tags}`;
+    const notes = document.createElement('div'); notes.className='muted small'; notes.textContent = item.notes || '';
+    const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='6px';
+    const editBtn = document.createElement('button'); editBtn.className='btn ghost small'; editBtn.textContent='Изменить';
+    editBtn.onclick = ()=> openEditModal(item);
+    const delBtn = document.createElement('button'); delBtn.className='btn ghost small'; delBtn.textContent='Удалить';
+    delBtn.onclick = ()=> { if(confirm('Удалить вещь?')) deleteItem(item.category,item.id); };
+    actions.appendChild(editBtn); actions.appendChild(delBtn);
+
+    info.appendChild(title); info.appendChild(meta); info.appendChild(notes); info.appendChild(actions);
+    div.appendChild(img); div.appendChild(info);
+    container.appendChild(div);
+  });
+}
+
+function openEditModal(item){
+  // simple inline prompt editing (keeps UI minimal)
+  const newName = prompt('Название', item.name);
+  if(newName===null) return;
+  const newStatus = prompt('Статус (есть/нужен)', item.status) || item.status;
+  const newPriority = prompt('Приоритет (низкий/средний/высокий/критичный)', item.priority) || item.priority;
+  const newTags = prompt('Теги (через запятую)', item.tags||'') ;
+  const newNotes = prompt('Заметки', item.notes||'') ;
+  updateItem(item.category, item.id, {name:newName, status:newStatus, priority:newPriority, tags:newTags, notes:newNotes});
+}
+
+async function renderKPIs(){
+  const s = await computeStats();
+  document.getElementById('kpiTotal').textContent = `${s.total} вещей`;
+  document.getElementById('kpiCompletion').textContent = `${s.completion}%`;
+}
+
+async function renderSideStats(){
+  const cat = await computeCategoryStats();
+  const container = document.getElementById('categoryStats'); container.innerHTML='';
+  cat.forEach(c=>{
+    const row = document.createElement('div'); row.style.marginBottom='8px';
+    row.innerHTML = `<div style="display:flex;justify-content:space-between"><div class="small">${c.category}</div><div class="small">${c.owned}/${c.total}</div></div>
+      <div class="progress" style="margin-top:6px"><i style="width:${c.percent}%"></i></div>`;
+    container.appendChild(row);
+  });
+
+  const tags = await getTopTags(10);
+  const tcont = document.getElementById('topTags'); tcont.innerHTML='';
+  if(tags.length===0) tcont.innerHTML='<div class="muted">Нет тегов</div>';
+  tags.forEach(t=>{
+    const el = document.createElement('div'); el.className='small muted'; el.textContent = `#${t.tag} — ${t.count}`;
+    tcont.appendChild(el);
+  });
+
+  const pr = await getPriorityStats();
+  const pcont = document.getElementById('priorityStats'); pcont.innerHTML='';
+  pr.forEach(p=>{
+    const el = document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between';
+    el.innerHTML = `<div class="small">${p.priority}</div><div class="kpi small" style="font-weight:600">${p.count}</div>`;
+    pcont.appendChild(el);
+  });
+}
+
+async function renderShopping(){
+  const s = await storageGet(STORAGE_KEYS.shopping) || [];
+  const active = s.filter(i=>!i.purchased);
+  const completed = s.filter(i=>i.purchased);
+  const actCont = document.getElementById('activePurchases'); actCont.innerHTML = '';
+  active.forEach(i=>{
+    const div = document.createElement('div'); div.className='list-item';
+    div.innerHTML = `<div style="flex:1"><div><strong>${i.item}</strong> <span class="muted small">${i.priority} ${i.price? '— ' + i.price: ''}</span></div></div>`;
+    const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='6px';
+    const tog = document.createElement('button'); tog.className='btn ghost small'; tog.textContent='Куплено'; tog.onclick = ()=> togglePurchased(i.id);
+    const rem = document.createElement('button'); rem.className='btn ghost small'; rem.textContent='Удалить'; rem.onclick = ()=> removeShopping(i.id);
+    actions.appendChild(tog); actions.appendChild(rem);
+    div.appendChild(actions);
+    actCont.appendChild(div);
+  });
+  const compCont = document.getElementById('completedPurchases'); compCont.innerHTML = '';
+  completed.forEach(i=>{
+    const div = document.createElement('div'); div.className='list-item';
+    div.innerHTML = `<div style="flex:1"><div><strong style="text-decoration:line-through">${i.item}</strong> <span class="muted small">${i.purchasedDate||''}</span></div></div>`;
+    const rem = document.createElement('button'); rem.className='btn ghost small'; rem.textContent='Удалить'; rem.onclick = ()=> removeShopping(i.id);
+    div.appendChild(rem);
+    compCont.appendChild(div);
+  });
+}
+
+async function renderOutfits(){
+  const list = await storageGet(STORAGE_KEYS.outfits) || [];
+  const filter = document.getElementById('outfitFilter').value;
+  const cont = document.getElementById('outfitsList'); cont.innerHTML='';
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  const all = flattenWardrobe(w);
+  (filter==='all'? list: list.filter(o=>o.season===filter)).forEach(o=>{
+    const check = o.items.map(item=> ({item,have: all.some(wi=> wi.name.toLowerCase().includes(item.toLowerCase()) && wi.status==='есть')}));
+    const div = document.createElement('div'); div.className='card'; div.style.marginBottom='8px';
+    div.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${o.name}</strong> <span class="muted small">${o.category||''}</span></div><div><button class="btn ghost small">Удалить</button></div></div>`;
+    const listEl = document.createElement('div'); listEl.style.marginTop='8px';
+    check.forEach(c=>{
+      const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between';
+      row.innerHTML = `<div class="small">${c.item}</div><div class="small ${c.have? '':'muted'}">${c.have? 'Есть':'Нужно'}</div>`;
+      listEl.appendChild(row);
+    });
+    div.appendChild(listEl);
+    const delBtn = div.querySelector('button'); delBtn.onclick = ()=> { if(confirm('Удалить образ?')) deleteOutfit(o.id); };
+    cont.appendChild(div);
+  });
+}
+
+async function renderLinks(){
+  const list = await storageGet(STORAGE_KEYS.links) || [];
+  const cont = document.getElementById('linksList'); cont.innerHTML='';
+  list.forEach(l=>{
+    const div = document.createElement('div'); div.className='list-item';
+    div.innerHTML = `<div style="flex:1"><a href="${l.url}" target="_blank" rel="noopener noreferrer" class="small">${l.url}</a></div>`;
+    const del = document.createElement('button'); del.className='btn ghost small'; del.textContent='Удалить'; del.onclick=()=> removeLink(l.id);
+    div.appendChild(del);
+    cont.appendChild(div);
+  });
+}
+
+async function renderAnalyticsView(){
+  const s = await computeStats();
+  document.getElementById('aTotal').textContent = `${s.total}`;
+  document.getElementById('aOwned').textContent = `${s.owned}`;
+  document.getElementById('aNeeded').textContent = `${s.needed}`;
+  document.getElementById('aCritical').textContent = `${s.critical}`;
+  document.getElementById('aBudget').textContent = `€${s.shoppingTotal}+`;
+  const events = await storageGet(STORAGE_KEYS.analytics) || [];
+  document.getElementById('aEvents').textContent = `${events.length}`;
+
+  const cat = await computeCategoryStats();
+  const catCont = document.getElementById('aCatStats'); catCont.innerHTML='';
+  cat.forEach(c=>{
+    const r = document.createElement('div'); r.style.marginBottom='8px';
+    r.innerHTML = `<div style="display:flex;justify-content:space-between"><div>${c.category}</div><div>${c.owned}/${c.total} (${c.percent}%)</div></div><div class="progress" style="margin-top:6px"><i style="width:${c.percent}%"></i></div>`;
+    catCont.appendChild(r);
+  });
+
+  const tags = await getTopTags(10);
+  const tagsCont = document.getElementById('aTags'); tagsCont.innerHTML='';
+  if(tags.length===0) tagsCont.innerHTML='<div class="muted">Нет тегов</div>';
+  tags.forEach(t=>{ const el = document.createElement('div'); el.className='small muted'; el.textContent = `#${t.tag} — ${t.count}`; tagsCont.appendChild(el); });
+
+  const pr = await getPriorityStats();
+  const prCont = document.getElementById('aPriority'); prCont.innerHTML='';
+  pr.forEach(p=>{ const el = document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.innerHTML=`<div class="small">${p.priority}</div><div class="kpi small">${p.count}</div>`; prCont.appendChild(el); });
+
+  const history = await getPurchaseHistoryLast(10);
+  const hCont = document.getElementById('aHistory'); hCont.innerHTML='';
+  if(history.length===0) hCont.innerHTML='<div class="muted">Нет покупок</div>';
+  history.forEach(h=> { const el=document.createElement('div'); el.className='small muted'; el.textContent = `${h.item} — ${h.purchasedDate||''}`; hCont.appendChild(el); });
+
+  const rec = await getRecommendations();
+  const recCont = document.getElementById('aRecs'); recCont.innerHTML='';
+  const basics = document.createElement('div'); basics.className='small muted'; basics.textContent = `Проверка базовых: ${rec.basics.length? rec.basics.join(', '): 'Ок'}`;
+  const crit = document.createElement('div'); crit.className='small muted'; crit.textContent = `Критичные покупки: ${rec.criticals.length? rec.criticals.join('; '): 'Нет'}`;
+  const inc = document.createElement('div'); inc.className='small muted'; inc.textContent = `Незавершённые образы: ${rec.incomplete.length? rec.incomplete.map(i=> `${i.name}: ${i.missing.join(', ')}`).join('; '): 'Нет'}`;
+  recCont.appendChild(basics); recCont.appendChild(crit); recCont.appendChild(inc);
+}
+
+// ---------- Event bindings ----------
+document.getElementById('addItemBtn').addEventListener('click', async ()=>{
+  const name = (document.getElementById('newName').value||'').trim();
+  if(!name){ alert('Введите название'); return; }
+  const category = document.getElementById('newCategory').value;
+  const status = document.getElementById('newStatus').value;
+  const priority = document.getElementById('newPriority').value;
+  const tags = document.getElementById('newTags').value;
+  const notes = document.getElementById('newNotes').value;
+  const fileInput = document.getElementById('newPhoto');
+  let photo = '';
+  if(fileInput.files && fileInput.files[0]){
+    const f = fileInput.files[0];
+    photo = await new Promise(resolve=>{
+      const r = new FileReader(); r.onload = ()=> resolve(r.result); r.readAsDataURL(f);
+    });
+  }
+  await addItem({id:uid(),name,category,status,priority,tags,notes,photo});
+  // clear inputs
+  document.getElementById('newName').value=''; document.getElementById('newTags').value=''; document.getElementById('newNotes').value=''; fileInput.value='';
+});
+
+document.getElementById('search').addEventListener('input', ()=> renderWardrobeList());
+document.getElementById('filterStatus').addEventListener('change', ()=> renderWardrobeList());
+document.getElementById('filterPriority').addEventListener('change', ()=> renderWardrobeList());
+
+document.getElementById('addShopBtn').addEventListener('click', async ()=>{
+  const item = (document.getElementById('shopName').value||'').trim(); if(!item) return alert('Введите название покупки');
+  const priority = document.getElementById('shopPriority').value; const price = document.getElementById('shopPrice').value;
+  await addShopping({id:uid(),item,priority,price,category:'',plannedDate:'',purchased:false});
+  document.getElementById('shopName').value=''; document.getElementById('shopPrice').value='';
+});
+
+document.getElementById('addOutfitBtn').addEventListener('click', async ()=>{
+  const name = (document.getElementById('outfitName').value||'').trim(); if(!name) return alert('Введите название образа');
+  const category = document.getElementById('outfitCategory').value; const season = document.getElementById('outfitSeason').value;
+  const items = (document.getElementById('outfitItems').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  if(items.length===0) return alert('Добавьте хотя бы одну вещь в образ');
+  await addOutfit({id:uid(),name,category,season,items});
+  document.getElementById('outfitName').value=''; document.getElementById('outfitItems').value=''; renderOutfits();
+});
+
+document.getElementById('outfitFilter').addEventListener('change', renderOutfits);
+
+document.getElementById('addLinkBtn').addEventListener('click', async ()=>{
+  const url = (document.getElementById('newLink').value||'').trim(); if(!url) return alert('Введите ссылку');
+  await addLink(url); document.getElementById('newLink').value=''; renderLinks();
+});
+
+document.getElementById('exportWardrobeBtn').addEventListener('click', async ()=>{
+  const w = await storageGet(STORAGE_KEYS.wardrobe) || {};
+  let txt = Object.entries(w).map(([cat,items]) => `\n=== ${cat.toUpperCase()} ===\n` + items.map(i=> `${i.name} - ${i.status} - ${i.priority} - ${i.tags||''}`).join('\n')).join('\n');
+  const blob = new Blob([txt],{type:'text/plain'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='wardrobe.txt'; a.click(); URL.revokeObjectURL(url);
+});
+
+document.getElementById('exportShoppingBtn').addEventListener('click', async ()=>{
+  const s = await storageGet(STORAGE_KEYS.shopping) || []; const text = s.map(i=> `${i.item} - ${i.priority} - ${i.price} - ${i.category} ${i.purchased? '(куплено '+(i.purchasedDate||'')+')':''}`).join('\n');
+  const blob = new Blob([text],{type:'text/plain'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='shopping-list.txt'; a.click(); URL.revokeObjectURL(url);
+});
+
+document.getElementById('clearAllBtn').addEventListener('click', async ()=>{
+  if(!confirm('Сбросить все данные? Это удалит все вещи и покупки в локальном хранилище.')) return;
+  localStorage.removeItem(STORAGE_KEYS.wardrobe); localStorage.removeItem(STORAGE_KEYS.shopping); localStorage.removeItem(STORAGE_KEYS.outfits); localStorage.removeItem(STORAGE_KEYS.links); localStorage.removeItem(STORAGE_KEYS.analytics);
+  await storageInit(); renderAll();
+});
+
+document.getElementById('toggleView').addEventListener('click', ()=>{
+  // open analytics tab
+  document.querySelectorAll('.tab').forEach(t=> t.classList.remove('active'));
+  document.querySelector('.tab[data-tab="analytics"]').classList.add('active');
+  showTab('analytics');
+});
+
+document.getElementById('downloadReport').addEventListener('click', exportFullReport);
+document.getElementById('closeAnalytics').addEventListener('click', ()=>{
+  document.querySelectorAll('.tab').forEach(t=> t.classList.remove('active'));
+  document.querySelector('.tab[data-tab="wardrobe"]').classList.add('active');
+  showTab('wardrobe');
+});
+
+// tabs
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click', ()=> { document.querySelectorAll('.tab').forEach(t=> t.classList.remove('active')); btn.classList.add('active'); showTab(btn.dataset.tab); });
+});
+function showTab(name){
+  ['wardrobe','shopping','outfits','inspiration','analytics'].forEach(id=> document.getElementById(id).style.display = id===name? 'block':'none');
+}
+
+// analytics events list accessible via storage key
+
+// initialize & render
+(async function init(){
+  await storageInit();
+  renderAll();
+})();
+</script>
+</body>
+</html>
