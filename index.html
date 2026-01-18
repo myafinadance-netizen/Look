@@ -135,7 +135,7 @@
           </div>
 
           <div class="card" style="margin-bottom:12px">
-            <h3 style="margin:0 0 8px 0">Добавить вещь <span class="small muted">Заполните поля и нажмит�� Добавить</span></h3>
+            <h3 style="margin:0 0 8px 0">Добавить вещь <span class="small muted">Заполните поля и нажмите Добавить</span></h3>
             <div style="display:grid;grid-template-columns:1fr 160px 120px;gap:10px;">
               <input id="newName" type="text" placeholder="Название (пример: Костюм черный)" />
               <select id="newCategory">
@@ -145,7 +145,7 @@
                 <option value="polo">Поло</option>
                 <option value="pants">Брюки</option>
                 <option value="shoes">Обувь</option>
-                <option value="accessories">Аксес��уары</option>
+                <option value="accessories">Аксессуары</option>
               </select>
               <select id="newStatus">
                 <option value="есть">Есть</option>
@@ -384,7 +384,6 @@
     }
 
     function editItem(id){
-      // simple prompt-based edit for brevity (you can replace with modal)
       let item = null; let catKey = null;
       for(const [cat,arr] of Object.entries(wardrobe)){
         const found = (arr||[]).find(i => i.id === id);
@@ -492,14 +491,11 @@
     document.getElementById('filterPriority').addEventListener('change', ()=> renderItems());
     document.getElementById('exportBtn').addEventListener('click', exportFullReport);
 
-    // small analytics panel toggles (desktop/mobile)
     document.getElementById('openAnalytics').addEventListener('click', async ()=>{
-      // show detailed analytics in a modal or expand sidebar - simple: scroll to sidebar
       document.getElementById('sidebar').scrollIntoView({ behavior:'smooth' });
       trackEvent('open_analytics', {});
     });
 
-    // mobile toolbar visibility
     function updateMobileToolbar(){
       const mt = document.getElementById('mobileToolbar');
       if(window.innerWidth <= 900) mt.style.display = 'flex'; else mt.style.display = 'none';
@@ -508,6 +504,8 @@
 
     /* ------------- Render all ------------- */
     function renderAll(){
+      // reload wardrobe from storage in case other tab changed it
+      wardrobe = storageGet(STORAGE_KEYS.wardrobe) || wardrobe;
       renderItems();
       renderSidebar();
     }
@@ -516,12 +514,13 @@
     renderAll();
     updateMobileToolbar();
 
-    // expose some functions to global scope for buttons created dynamically
+    // expose functions globally for inline buttons
     window.deleteItem = deleteItem;
     window.editItem = editItem;
 
-    // track page open
+    // initial page view event
     trackEvent('page_view', { path: location.pathname });
+
   </script>
 </body>
 </html>
