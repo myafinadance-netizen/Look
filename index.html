@@ -3,70 +3,63 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Мой гардероб — Веб</title>
-  <meta name="description" content="Гардероб — адаптивная версия для десктопа, планшета и телефон��" />
+  <title>Мой гардероб — Веб (Analytics + Recommendations + Reminders)</title>
+  <meta name="description" content="Гардероб с аналитикой, рекомендациями, напоминаниями, генератором образов и историей. Работает локально; опционально можно синхронизировать с Supabase." />
   <style>
     :root{
       --bg-0:#06101a; --bg-1:#0b1220; --panel:#0f1720; --muted:#9CA3AF;
       --accent:#dc2626; --accent-2:#06b6d4; --card-border:rgba(255,255,255,0.04);
-      --radius:12px; --gap:16px; --max-width:1200px; --safe-top:env(safe-area-inset-top,0px);
+      --radius:12px; --gap:14px; --max-width:1200px; --safe-top:env(safe-area-inset-top,0px);
+      --success:#10b981; --danger:#ef4444; --accent-3:#f59e0b;
     }
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-0),var(--bg-1));color:#e6eef6;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto; -webkit-font-smoothing:antialiased}
-    .wrap{max-width:var(--max-width);margin:calc(20px + var(--safe-top)) auto 40px;padding:16px}
-    header{display:flex;align-items:flex-start;gap:16px;margin-bottom:18px}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg-0),var(--bg-1));color:#e6eef6;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:var(--max-width);margin:calc(18px + var(--safe-top)) auto 60px;padding:16px}
+    header{display:flex;align-items:flex-start;gap:16px;margin-bottom:12px}
     h1{margin:0;font-size:20px}
     .subtitle{color:var(--muted);font-size:13px}
-
-    .tabs{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}
-    .tab{padding:10px 14px;border-radius:10px;background:transparent;border:1px solid transparent;color:var(--muted);cursor:pointer;font-size:14px}
+    .tabs{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+    .tab{padding:8px 12px;border-radius:8px;background:transparent;border:1px solid transparent;color:var(--muted);cursor:pointer;font-size:13px}
     .tab.active{background:rgba(255,255,255,0.03);color:#fff;border-color:var(--card-border)}
-
-    .main-grid{display:grid;grid-template-columns:1fr 320px;gap:var(--gap);align-items:start}
-    .panel{background:var(--panel);border-radius:var(--radius);padding:16px;border:1px solid var(--card-border);box-shadow:0 6px 24px rgba(0,0,0,0.35)}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
-
-    input[type="text"], textarea, select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(0,0,0,0.35);color:#fff;font-size:14px}
-    textarea{min-height:60px;resize:vertical}
-    .btn{padding:10px 14px;border-radius:10px;border:0;cursor:pointer}
+    .main-grid{display:grid;grid-template-columns:1fr 340px;gap:var(--gap);align-items:start}
+    .panel{background:var(--panel);border-radius:var(--radius);padding:14px;border:1px solid var(--card-border);box-shadow:0 8px 28px rgba(0,0,0,0.45)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
+    input[type="text"], input[type="url"], input[type="date"], textarea, select{width:100%;padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(0,0,0,0.35);color:#fff;font-size:14px}
+    textarea{min-height:64px;resize:vertical}
+    .btn{padding:8px 12px;border-radius:10px;border:0;cursor:pointer}
     .btn.primary{background:var(--accent);color:#fff}
     .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
-
-    .controls{display:flex;gap:8px;align-items:center}
-    .view-toggle{display:flex;gap:8px;align-items:center;margin-left:8px}
+    .muted{color:var(--muted);font-size:13px}
+    .flex{display:flex;gap:8px;align-items:center}
+    .ml-auto{margin-left:auto}
+    .kpi{font-size:20px;font-weight:700}
+    .badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:12px}
+    .badge.green{background:var(--success);color:#04291a}
+    .badge.red{background:var(--danger);color:#fff}
+    .badge.yellow{background:var(--accent-3);color:#2b1600}
+    /* list/grid view */
+    .view-controls{display:flex;gap:8px;align-items:center}
     .view-btn{padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);cursor:pointer;color:var(--muted)}
     .view-btn.active{background:rgba(255,255,255,0.03);color:#fff;border-color:var(--card-border)}
-
-    /* list view */
-    .items-list{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+    .items-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
     .item{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
-    .item-photo{width:72px;height:72px;border-radius:8px;flex-shrink:0;object-fit:cover;background:#071018;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:28px}
-
-    /* grid view */
-    .grid-view .items-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+    .item-photo{width:76px;height:76px;border-radius:8px;flex-shrink:0;object-fit:cover;background:#071018;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:28px}
+    .items-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
     .grid-card{background:var(--panel);border-radius:12px;overflow:hidden;border:1px solid var(--card-border);transition:transform .18s ease,box-shadow .18s ease}
-    .grid-card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.5)}
-    .card-photo{width:100%;height:180px;object-fit:cover;background:#071018;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:36px}
-    .card-body{padding:12px}
-    .grid-title{font-weight:700;margin-bottom:8px}
-    .grid-meta{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
-
-    .badge{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px}
-    .badge.green{background:#064e3b;color:#bbf7d0}
-    .badge.red{background:#7f1d1d;color:#ffd7d7}
-    .muted{color:var(--muted);font-size:13px}
-    .kpi{font-size:20px;font-weight:700}
-
+    .grid-card:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(0,0,0,0.6)}
+    .card-photo{width:100%;height:180px;object-fit:cover;background:#071018;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:34px}
+    .card-body{padding:10px}
+    .small{font-size:13px;color:var(--muted)}
+    .note{font-size:13px;color:var(--muted);margin-top:6px}
     /* modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000}
-    .modal{background:var(--panel);border-radius:10px;padding:16px;max-width:720px;width:96%;box-shadow:0 12px 40px rgba(0,0,0,0.6);border:1px solid var(--card-border)}
-    .photo-preview{position:relative;display:inline-block}
-    .del-photo{position:absolute;right:6px;top:6px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.06);color:#fff;border-radius:999px;padding:4px 6px;cursor:pointer}
-
+    .modal{background:var(--panel);border-radius:10px;padding:12px;max-width:760px;width:96%;box-shadow:0 12px 40px rgba(0,0,0,0.6);border:1px solid var(--card-border)}
+    .photo-preview{position:relative;display:inline-block;margin-right:10px}
+    .photo-preview img{width:160px;height:160px;object-fit:cover;border-radius:8px}
+    .del-photo{position:absolute;right:6px;top:6px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.06);color:#fff;border-radius:999px;padding:4px 6px;cursor:pointer}
     /* responsive */
-    @media (max-width:1000px){ .main-grid{grid-template-columns:1fr 300px} .grid-view .items-grid{grid-template-columns:repeat(3,1fr)} }
-    @media (max-width:700px){ .grid-view .items-grid{grid-template-columns:repeat(2,1fr)} .item-photo{width:56px;height:56px} .card-photo{height:140px} }
-    @media (max-width:480px){ .main-grid{grid-template-columns:1fr} .sidebar{order:2} .grid-view .items-grid{grid-template-columns:repeat(2,1fr)} .card-photo{height:120px} }
-
+    @media (max-width:1000px){ .main-grid{grid-template-columns:1fr 300px} .items-grid{grid-template-columns:repeat(3,1fr)} }
+    @media (max-width:700px){ .items-grid{grid-template-columns:repeat(2,1fr)} .item-photo{width:56px;height:56px} .card-photo{height:140px} }
+    @media (max-width:480px){ .main-grid{grid-template-columns:1fr} .sidebar{order:2} .items-grid{grid-template-columns:repeat(2,1fr)} .card-photo{height:120px} }
     :focus{outline:2px solid rgba(6,182,212,0.18);outline-offset:2px}
   </style>
 </head>
@@ -75,19 +68,19 @@
     <header>
       <div style="flex:1">
         <h1>Мой гардероб — Web</h1>
-        <div class="subtitle">Статический интерфейс. Фото в base64 сохраняются в localStorage.</div>
+        <div class="subtitle">Analytics, Recommendations, Reminders, Outfits, Calendar. Работает локально; опционально можно подключить Supabase.</div>
 
-        <div class="tabs" role="tablist" aria-label="Разделы" style="margin-top:12px">
+        <div class="tabs" aria-label="Разделы" style="margin-top:12px">
           <button class="tab active" data-tab="wardrobe">Гардероб</button>
           <button class="tab" data-tab="shopping">Шопинг</button>
           <button class="tab" data-tab="outfits">Образы</button>
-          <button class="tab" data-tab="inspiration">Идеи</button>
           <button class="tab" data-tab="analytics">Аналитика</button>
+          <button class="tab" data-tab="settings">Настройки</button>
         </div>
       </div>
 
-      <div class="controls" style="align-self:flex-start">
-        <div class="view-toggle" title="Режим просмотра">
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="view-controls" title="Режим просмотра">
           <button id="listViewBtn" class="view-btn active" aria-pressed="true" title="Список">☰</button>
           <button id="gridViewBtn" class="view-btn" aria-pressed="false" title="Сетка">▦</button>
         </div>
@@ -95,32 +88,33 @@
     </header>
 
     <main class="main-grid" id="mainGrid">
-      <!-- Left column: multiple sections shown/hidden by tabs -->
+      <!-- Left column: multiple sections -->
       <section>
-        <!-- Wardrobe -->
+        <!-- Wardrobe section -->
         <div id="wardrobeSection" class="panel">
-          <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
             <input id="search" type="text" placeholder="Поиск по названию или тегам" style="flex:1" />
-            <select id="filterStatus" class="small">
+            <select id="filterStatus">
               <option value="all">Все статусы</option>
-              <option value="owned">Только есть</option>
-              <option value="needed">Только нужно</option>
+              <option value="есть">Только есть</option>
+              <option value="нужен">Только нужно</option>
             </select>
-            <select id="filterPriority" class="small">
+            <select id="filterPriority">
               <option value="all">Все приоритеты</option>
               <option value="критичный">Критичный</option>
               <option value="высокий">Высокий</option>
               <option value="средний">Средний</option>
               <option value="низкий">Низкий</option>
             </select>
-            <div style="margin-left:auto;display:flex;gap:8px">
-              <button id="exportBtn" class="btn ghost">Экспорт</button>
+            <div class="ml-auto">
+              <button id="exportJsonBtn" class="btn ghost">Экспорт JSON</button>
+              <button id="importJsonBtn" class="btn ghost">Импорт</button>
             </div>
           </div>
 
-          <div class="card" style="margin-bottom:12px">
-            <h3 style="margin:0 0 8px 0">Добавить вещь <span class="small muted">Заполните поля и загрузите фото</span></h3>
-            <div style="display:grid;grid-template-columns:1fr 160px 120px;gap:10px;">
+          <div class="card" style="margin-bottom:10px">
+            <h3 style="margin:0 0 8px 0">Добавить вещь <span class="small muted">(photo сохраняется в localStorage как base64)</span></h3>
+            <div style="display:grid;grid-template-columns:1fr 160px 120px;gap:10px">
               <input id="newName" type="text" placeholder="Название (пример: Костюм черный)" />
               <select id="newCategory">
                 <option value="suits">Костюмы</option>
@@ -154,57 +148,54 @@
             </div>
           </div>
 
-          <!-- list and grid wrappers -->
-          <div id="viewContainer" class="list-view">
-            <div id="itemsList" class="items-list"></div>
-            <div id="itemsGrid" class="items-grid" style="display:none"></div>
+          <div id="views">
+            <div id="listView">
+              <div id="itemsList" class="items-list"></div>
+            </div>
+            <div id="gridView" style="display:none">
+              <div id="itemsGrid" class="items-grid"></div>
+            </div>
           </div>
         </div>
 
         <!-- Shopping -->
-        <div id="shoppingSection" class="panel" style="display:none">
+        <div id="shoppingSection" class="panel" style="display:none;margin-top:14px">
           <div class="card">
-            <h3 style="margin-top:0">Шопинг — Добавить покупку</h3>
-            <div style="display:grid;grid-template-columns:1fr 160px 120px;gap:8px;align-items:center">
-              <input id="shopName" type="text" placeholder="Что купить (пример: Туфли черные)" />
+            <h3 style="margin:0 0 8px 0">Шопинг — добавьте покупку</h3>
+            <div style="display:grid;grid-template-columns:1fr 140px 120px;gap:8px">
+              <input id="shopName" type="text" placeholder="Что купить" />
               <select id="shopPriority">
                 <option>КРИТИЧНО</option>
                 <option>ВЫСОКИЙ</option>
                 <option selected>СРЕДНИЙ</option>
                 <option>НИЗКИЙ</option>
               </select>
-              <input id="shopPrice" type="text" placeholder="Цена (пример: €200-300)" />
-              <div style="grid-column:1 / span 3; display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+              <input id="shopPrice" type="text" placeholder="Цена" />
+              <div style="grid-column:1/span3;display:flex;justify-content:flex-end;margin-top:8px">
+                <input id="shopPlannedDate" type="date" style="margin-right:8px" />
                 <button id="addShopBtn" class="btn primary">Добавить в шопинг</button>
               </div>
             </div>
           </div>
 
           <div style="margin-top:12px">
-            <h3>Активные покупки</h3>
-            <div id="activePurchases" style="margin-top:8px"></div>
-            <h3 style="margin-top:12px">Куплено</h3>
-            <div id="completedPurchases" style="margin-top:8px"></div>
+            <h4>Активные покупки</h4>
+            <div id="activePurchases"></div>
+            <h4 style="margin-top:12px">Куплено</h4>
+            <div id="completedPurchases"></div>
           </div>
         </div>
 
-        <!-- Outfits -->
-        <div id="outfitsSection" class="panel" style="display:none">
+        <!-- Outfits & Calendar -->
+        <div id="outfitsSection" class="panel" style="display:none;margin-top:14px">
           <div class="card">
-            <h3 style="margin-top:0">Создать образ</h3>
-            <div style="display:grid;grid-template-columns:1fr 160px;gap:8px">
-              <input id="outfitName" type="text" placeholder="Название образа" />
+            <h3 style="margin:0 0 8px 0">Создать образ</h3>
+            <div style="display:grid;grid-template-columns:1fr 140px;gap:8px">
+              <input id="outfitName" type="text" placeholder="Название образа (пример: Офисный)" />
               <select id="outfitSeason">
-                <option value="">Сезон</option>
-                <option value="лето">Лето</option>
-                <option value="зима">Зима</option>
-                <option value="весна">Весна</option>
-                <option value="осень">Осень</option>
-                <option value="всесезон">Всесезон</option>
+                <option value="">Сезон</option><option value="лето">Лето</option><option value="зима">Зима</option><option value="всесезон">Всесезон</option>
               </select>
-              <input id="outfitCategory" type="text" placeholder="Категория (Работа, Тренировки)" />
-              <div></div>
-              <input id="outfitItems" type="text" placeholder="Вещи через запятую (пример: Рубашка белая, Костюм черный)" style="grid-column:1/span2" />
+              <input id="outfitItems" type="text" placeholder="Список вещей через запятую (с точным названием или часть)" style="grid-column:1/span2" />
               <div style="display:flex;justify-content:flex-end">
                 <button id="addOutfitBtn" class="btn primary">Создать образ</button>
               </div>
@@ -212,29 +203,70 @@
           </div>
 
           <div style="margin-top:12px">
-            <h3>Список образов</h3>
-            <div id="outfitsList" style="margin-top:8px"></div>
-          </div>
-        </div>
-
-        <!-- Inspiration -->
-        <div id="inspirationSection" class="panel" style="display:none">
-          <div class="card">
-            <h3 style="margin-top:0">Идеи / Ссылки</h3>
-            <div style="display:flex;gap:8px">
-              <input id="newLink" type="url" placeholder="https://..." style="flex:1" />
-              <button id="addLinkBtn" class="btn primary">Добавить</button>
+            <h4>Генератор образов (предложения на основе имеющихся вещей)</h4>
+            <div class="card">
+              <div style="display:flex;gap:8px;align-items:center">
+                <select id="generatorOccasion"><option value="">Все</option><option value="работа">Работа</option><option value="спорт">Спорт</option><option value="вечер">Вечер</option></select>
+                <button id="generateBtn" class="btn ghost">Сгенерировать предложения</button>
+                <div class="ml-auto small muted">Выбор предложений основан на доступных категориях и тегах</div>
+              </div>
+              <div id="generatedOutfits" style="margin-top:8px"></div>
             </div>
           </div>
+
           <div style="margin-top:12px">
-            <div id="linksList"></div>
+            <h4>Календарь образов — план на неделю</h4>
+            <div class="card" id="weekPlanner" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:12px">
+              <!-- days injected here -->
+            </div>
+            <div class="small muted" style="margin-top:8px">Кликните день, чтобы выбрать образ для этого дня</div>
           </div>
         </div>
 
         <!-- Analytics -->
-        <div id="analyticsSection" class="panel" style="display:none">
-          <h3 style="margin-top:0">Аналитика</h3>
-          <div id="analyticsContent"></div>
+        <div id="analyticsSection" class="panel" style="display:none;margin-top:14px">
+          <div class="card">
+            <h3 style="margin:0 0 8px 0">Аналитика и отчёты</h3>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div style="min-width:160px"><div class="small muted">Всего вещей</div><div class="kpi" id="anTotal">—</div></div>
+              <div style="min-width:160px"><div class="small muted">Есть</div><div class="kpi" id="anOwned">—</div></div>
+              <div style="min-width:160px"><div class="small muted">Нужно купить</div><div class="kpi" id="anNeeded">—</div></div>
+              <div style="min-width:160px"><div class="small muted">Критичных</div><div class="kpi" id="anCritical">—</div></div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="card">
+            <h4>История изменений / события</h4>
+            <div id="eventsLog" style="max-height:220px;overflow:auto;padding-top:8px"></div>
+          </div>
+
+          <div style="margin-top:12px" class="card">
+            <h4>Покупки по месяцам</h4>
+            <div id="purchasesByMonth" style="margin-top:8px"></div>
+          </div>
+
+          <div style="margin-top:12px" class="card">
+            <h4>Рекомендации</h4>
+            <div id="recommendations" style="margin-top:8px"></div>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="settingsSection" class="panel" style="display:none;margin-top:14px">
+          <div class="card">
+            <h3 style="margin:0 0 8px 0">Настройки & Синхронизация</h3>
+            <p class="small muted">Опции синхронизации и уведомлений. Для полной работы уведомлений и кросс‑устройств рекомендую Supabase + GitHub Actions + Telegram (инструкции будут в PR).</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div>
+                <label class="small muted">Включить локальные браузерные уведомления</label><br/>
+                <button id="enableNotifBtn" class="btn ghost" style="margin-top:6px">Разрешить уведомления</button>
+              </div>
+              <div>
+                <label class="small muted">Интеграция Telegram (требует backend)</label><br/>
+                <button id="telegramSetupBtn" class="btn ghost" style="margin-top:6px">Показать инструкцию</button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -251,445 +283,626 @@
           </div>
         </div>
 
-        <div style="margin-top:10px">
-          <div class="small muted">Категории</div>
-          <div id="categoryStats" style="margin-top:8px"></div>
+        <div style="margin-top:10px" class="card">
+          <div class="small muted">Рекомендации (короткие)</div>
+          <div id="sidebarRecs" style="margin-top:8px"></div>
         </div>
 
-        <div style="margin-top:12px">
+        <div style="margin-top:10px" class="card">
           <div class="small muted">Популярные теги</div>
           <div id="topTags" style="margin-top:8px"></div>
+        </div>
+
+        <div style="margin-top:10px" class="card">
+          <div class="small muted">Бюджет (актуальный меся��)</div>
+          <div id="monthBudget" style="margin-top:8px"></div>
         </div>
       </aside>
     </main>
   </div>
 
-  <!-- Edit Modal (hidden by default) -->
-  <div id="editModal" style="display:none"></div>
+  <!-- modal container -->
+  <div id="modalRoot"></div>
 
 <script>
-/* Storage keys */
-const STORAGE_KEYS = {
+/*
+  Полнофункциональный single-file шаблон для GitHub Pages.
+  Возможности, реализованные клиент-сайдово:
+  - фото (base64) при добавлении/редактировании (сохранение в localStorage)
+  - два режима просмотра: список/сетка
+  - история событий (analytics log) в localStorage
+  - timestamps: addedAt, purchasedAt, updatedAt
+  - purchase history by month
+  - recommendations (rule-based)
+  - reminders (локальные): сохраняются и проверяются периодически; используются Browser Notifications если разрешены
+  - outfits generator (простая комбинация по категориям) + weekly planner
+  - capsule helper: создание набора и подсчёт комбинаторики (в интерфейсе будет доступно через консоль/экспорт)
+  - export/import JSON
+  - данные сохраняются в keys:
+      wardrobe-data-v2
+      shopping-data-v2
+      outfits-data-v2
+      links-data-v2
+      analytics-data-v1
+      reminders-data-v1
+*/
+
+const KEYS = {
   wardrobe: 'wardrobe-data-v2',
   shopping: 'shopping-data-v2',
   outfits: 'outfits-data-v2',
-  links: 'inspiration-data-v2',
-  analytics: 'wardrobe-analytics-v1'
+  links: 'links-data-v2',
+  analytics: 'analytics-data-v1',
+  reminders: 'reminders-data-v1'
 };
-function safeParse(s){ try{ return JSON.parse(s); } catch(e){return null;} }
-function storageGet(k){ try{ const r=localStorage.getItem(k); return r? safeParse(r): null; } catch(e){ return null; } }
-function storageSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); } catch(e){ console.warn('storageSet', e); } }
+
+function safeParse(s){ try{ return JSON.parse(s); }catch(e){ return null; } }
+function storageGet(k){ try{ const r = localStorage.getItem(k); return r ? safeParse(r) : null; }catch(e){ console.warn('storageGet',e); return null; } }
+function storageSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ console.warn('storageSet',e); } }
 function uid(){ return Date.now() + Math.floor(Math.random()*1000); }
+function nowISO(){ return new Date().toISOString(); }
+function daysBetween(d1,d2){ return Math.round((new Date(d2)-new Date(d1)) / (1000*60*60*24)); }
 
-/* init defaults if empty (won't overwrite existing data) */
-function initDefaults(){
-  if(!storageGet(STORAGE_KEYS.wardrobe)){
-    storageSet(STORAGE_KEYS.wardrobe, {
-      suits:[{id:1,name:'Костюм черный однотонный',status:'есть',priority:'высокий',tags:'офис',notes:'',photo:''}],
-      shirts:[{id:2,name:'Рубашка белая',status:'есть',priority:'низкий',tags:'базовый',notes:'',photo:''}],
-      knitwear:[],polo:[],pants:[],shoes:[],accessories:[]
-    });
+/* init data if missing */
+function initIfEmpty(){
+  if(!storageGet(KEYS.wardrobe)){
+    const sample = {
+      suits:[{ id:1, name:'Костюм черный однотонный', status:'есть', priority:'высокий', tags:'офис,формальный', notes:'', photo:'', addedAt: nowISO(), updatedAt: nowISO(), usageCount:3, wearHistory:[] }],
+      shirts:[{ id:2, name:'Рубашка белая', status:'есть', priority:'низкий', tags:'базовый', notes:'', photo:'', addedAt: nowISO(), updatedAt: nowISO(), usageCount:7, wearHistory:[] }],
+      knitwear:[], polo:[], pants:[], shoes:[], accessories:[]
+    };
+    storageSet(KEYS.wardrobe, sample);
   }
-  if(!storageGet(STORAGE_KEYS.shopping)) storageSet(STORAGE_KEYS.shopping, []);
-  if(!storageGet(STORAGE_KEYS.outfits)) storageSet(STORAGE_KEYS.outfits, []);
-  if(!storageGet(STORAGE_KEYS.links)) storageSet(STORAGE_KEYS.links, []);
-  if(!storageGet(STORAGE_KEYS.analytics)) storageSet(STORAGE_KEYS.analytics, []);
+  if(!storageGet(KEYS.shopping)) storageSet(KEYS.shopping, []);
+  if(!storageGet(KEYS.outfits)) storageSet(KEYS.outfits, []);
+  if(!storageGet(KEYS.links)) storageSet(KEYS.links, []);
+  if(!storageGet(KEYS.analytics)) storageSet(KEYS.analytics, []);
+  if(!storageGet(KEYS.reminders)) storageSet(KEYS.reminders, []);
 }
-initDefaults();
-let wardrobe = storageGet(STORAGE_KEYS.wardrobe) || {};
+initIfEmpty();
 
-/* helpers */
-function flatten(w){ return Object.entries(w).flatMap(([cat,items]) => (items||[]).map(i => ({...i, category:cat}))); }
+let wardrobe = storageGet(KEYS.wardrobe) || {};
+let shopping = storageGet(KEYS.shopping) || [];
+let outfits = storageGet(KEYS.outfits) || [];
+let analytics = storageGet(KEYS.analytics) || [];
+let reminders = storageGet(KEYS.reminders) || [];
+
+/* ---- Utilities ---- */
 function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function flatten(w){ return Object.entries(w).flatMap(([cat,arr]) => (arr||[]).map(it => ({...it, category:cat}))); }
+function pushEvent(type, payload={}){ analytics = storageGet(KEYS.analytics) || []; analytics.unshift({ id:uid(), type, payload, ts: nowISO() }); storageSet(KEYS.analytics, analytics); renderEvents(); }
 
-/* --- View mode (list / grid) --- */
-let viewMode = 'list'; // 'list' or 'grid'
-const listBtn = document.getElementById('listViewBtn');
-const gridBtn = document.getElementById('gridViewBtn');
-function setView(mode){
-  viewMode = mode;
-  const viewContainer = document.getElementById('viewContainer');
-  if(mode === 'grid'){
-    viewContainer.classList.add('grid-view');
-    document.getElementById('itemsList').style.display = 'none';
-    document.getElementById('itemsGrid').style.display = 'grid';
-    listBtn.classList.remove('active'); gridBtn.classList.add('active');
-  } else {
-    viewContainer.classList.remove('grid-view');
-    document.getElementById('itemsList').style.display = 'block';
-    document.getElementById('itemsGrid').style.display = 'none';
-    listBtn.classList.add('active'); gridBtn.classList.remove('active');
-  }
-  renderItems();
-}
-listBtn.addEventListener('click', ()=> setView('list'));
-gridBtn.addEventListener('click', ()=> setView('grid'));
+/* ---- Photo handling: file -> dataURL ---- */
+function fileToDataURL(file){ return new Promise(resolve => { const r=new FileReader(); r.onload = ()=>resolve(r.result); r.readAsDataURL(file); }); }
 
-/* --- Add item with photo (photo -> base64) --- */
-async function addItem(){
-  const name = (document.getElementById('newName').value||'').trim();
-  if(!name) return alert('Введите название вещи');
+/* ---- Add item ---- */
+document.getElementById('addItemBtn').addEventListener('click', async ()=>{
+  const name = (document.getElementById('newName').value||'').trim(); if(!name){ alert('Введите название'); return; }
   const category = document.getElementById('newCategory').value;
   const status = document.getElementById('newStatus').value;
   const priority = document.getElementById('newPriority').value;
   const tags = (document.getElementById('newTags').value||'').trim();
   const notes = (document.getElementById('newNotes').value||'').trim();
-
-  // photo
   const fileInput = document.getElementById('newPhoto');
   let photo = '';
-  if(fileInput.files && fileInput.files[0]){
-    photo = await fileToDataURL(fileInput.files[0]);
-  }
-
-  const item = { id: uid(), name, status, priority, tags, notes, photo };
+  if(fileInput.files && fileInput.files[0]) photo = await fileToDataURL(fileInput.files[0]);
+  const item = { id: uid(), name, status, priority, tags, notes, photo, addedAt: nowISO(), updatedAt: nowISO(), usageCount:0, wearHistory: [] };
   wardrobe[category] = wardrobe[category] || [];
   wardrobe[category].push(item);
-  storageSet(STORAGE_KEYS.wardrobe, wardrobe);
+  storageSet(KEYS.wardrobe, wardrobe);
+  pushEvent('add_item', { id:item.id, name:item.name, category });
   clearAddForm();
   renderAll();
+});
+function clearAddForm(){ document.getElementById('newName').value=''; document.getElementById('newTags').value=''; document.getElementById('newNotes').value=''; document.getElementById('newPhoto').value=''; }
+
+/* ---- Render items (list & grid) ---- */
+let viewMode = 'list';
+const listViewBtn = document.getElementById('listViewBtn');
+const gridViewBtn = document.getElementById('gridViewBtn');
+listViewBtn.addEventListener('click', ()=> setView('list'));
+gridViewBtn.addEventListener('click', ()=> setView('grid'));
+function setView(mode){
+  viewMode = mode;
+  document.getElementById('listView').style.display = mode==='list' ? '' : 'none';
+  document.getElementById('gridView').style.display = mode==='grid' ? '' : 'none';
+  listViewBtn.classList.toggle('active', mode==='list');
+  gridViewBtn.classList.toggle('active', mode==='grid');
+  renderItems();
 }
 
-function clearAddForm(){ document.getElementById('newName').value=''; document.getElementById('newTags').value=''; document.getElementById('newNotes').value=''; document.getElementById('newPhoto').value=''; document.getElementById('newPriority').value='низкий'; }
-
-async function fileToDataURL(file){
-  return await new Promise(resolve=>{
-    const r = new FileReader();
-    r.onload = ()=> resolve(r.result);
-    r.readAsDataURL(file);
-  });
-}
-
-/* --- Render items (both modes) --- */
 function renderItems(){
-  wardrobe = storageGet(STORAGE_KEYS.wardrobe) || wardrobe;
+  wardrobe = storageGet(KEYS.wardrobe) || wardrobe;
   const items = flatten(wardrobe);
-  const search = (document.getElementById('search').value||'').toLowerCase();
+  const q = (document.getElementById('search').value||'').toLowerCase();
   const statusFilter = document.getElementById('filterStatus').value;
   const prFilter = document.getElementById('filterPriority').value;
-
   let shown = items.slice();
-  if(search) shown = shown.filter(i => i.name.toLowerCase().includes(search) || (i.tags||'').toLowerCase().includes(search));
-  if(statusFilter==='owned') shown = shown.filter(i => i.status === 'есть');
-  if(statusFilter==='needed') shown = shown.filter(i => i.status !== 'есть');
+  if(q) shown = shown.filter(i => i.name.toLowerCase().includes(q) || (i.tags||'').toLowerCase().includes(q));
+  if(statusFilter !== 'all') shown = shown.filter(i => i.status === statusFilter);
   if(prFilter !== 'all') shown = shown.filter(i => i.priority === prFilter);
 
-  // list
-  const listContainer = document.getElementById('itemsList'); listContainer.innerHTML = '';
-  // grid
-  const gridContainer = document.getElementById('itemsGrid'); gridContainer.innerHTML = '';
+  // LIST
+  const list = document.getElementById('itemsList'); list.innerHTML = '';
+  // GRID
+  const grid = document.getElementById('itemsGrid'); grid.innerHTML = '';
 
   if(shown.length === 0){
-    listContainer.innerHTML = '<div class="muted">Нет вещей для показа.</div>';
-    gridContainer.innerHTML = '<div class="muted">Нет вещей для показа.</div>';
+    list.innerHTML = '<div class="muted">Нет вещей</div>';
+    grid.innerHTML = '<div class="muted">Нет вещей</div>';
     return;
   }
 
   shown.forEach(it=>{
-    // LIST ITEM
-    const listEl = document.createElement('div'); listEl.className = 'item';
-    const photoEl = document.createElement('div'); photoEl.className='item-photo';
-    if(it.photo){
-      const img = document.createElement('img'); img.src = it.photo; img.alt=''; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; img.style.borderRadius='8px';
-      photoEl.appendChild(img);
-    } else {
-      photoEl.textContent = '🖼';
-    }
-    const info = document.createElement('div'); info.style.flex='1';
-    const title = document.createElement('div'); title.className='title'; title.innerHTML = `<strong>${escapeHtml(it.name)}</strong> <span class="muted">(${escapeHtml(it.category)})</span>`;
+    // list item
+    const li = document.createElement('div'); li.className = 'item';
+    const photoDiv = document.createElement('div'); photoDiv.className='item-photo';
+    if(it.photo){ const img = document.createElement('img'); img.src = it.photo; img.alt=''; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; img.style.borderRadius='8px'; photoDiv.appendChild(img); } else { photoDiv.textContent = '🖼'; }
+    const info = document.createElement('div'); info.style.flex = '1';
+    const title = document.createElement('div'); title.innerHTML = `<strong>${escapeHtml(it.name)}</strong> <span class="muted">(${escapeHtml(it.category)})</span>`;
     const meta = document.createElement('div'); meta.style.marginTop='6px';
     const statusBadge = `<span class="badge ${it.status==='есть'?'green':'red'}">${it.status==='есть'?'Есть':'Нужно'}</span>`;
-    const prColor = it.priority==='критичный' ? '#7f1d1d' : it.priority==='высокий' ? '#9a3412' : it.priority==='средний' ? '#713f12' : '#374151';
-    const prBadge = `<span class="badge" style="background:${prColor};color:#fff;margin-left:8px">${escapeHtml(it.priority)}</span>`;
+    const prCol = it.priority==='критичный' ? '#7f1d1d' : it.priority==='высокий' ? '#9a3412' : it.priority==='средний' ? '#713f12' : '#374151';
+    const prBadge = `<span class="badge" style="background:${prCol};color:#fff;margin-left:8px">${escapeHtml(it.priority)}</span>`;
     meta.innerHTML = statusBadge + prBadge;
-    const tagRow = document.createElement('div'); tagRow.className='muted'; tagRow.style.marginTop='8px'; tagRow.textContent = it.tags? '#' + it.tags.split(',')[0] : '';
+    const tags = document.createElement('div'); tags.className='small muted'; tags.style.marginTop='8px'; tags.textContent = it.tags? '#'+it.tags.split(',')[0] : '';
     const actions = document.createElement('div'); actions.style.marginTop='10px'; actions.style.display='flex'; actions.style.gap='8px';
     const editBtn = document.createElement('button'); editBtn.className='btn ghost'; editBtn.textContent='Изменить'; editBtn.onclick = ()=> openEditModal(it.id);
-    const delBtn = document.createElement('button'); delBtn.className='btn ghost'; delBtn.textContent='Удалить'; delBtn.onclick = ()=> { if(confirm('Удалить вещь?')) deleteItem(it.id); };
-    actions.appendChild(editBtn); actions.appendChild(delBtn);
+    const delBtn = document.createElement('button'); delBtn.className='btn ghost'; delBtn.textContent='Удалить'; delBtn.onclick = ()=> { if(confirm('Удалить?')) { deleteItem(it.id); } };
+    const wearBtn = document.createElement('button'); wearBtn.className='btn ghost'; wearBtn.textContent='Отметить как надетое'; wearBtn.onclick = ()=> markWorn(it.id);
+    actions.appendChild(editBtn); actions.appendChild(wearBtn); actions.appendChild(delBtn);
+    info.appendChild(title); info.appendChild(meta); info.appendChild(tags); info.appendChild(actions);
+    li.appendChild(photoDiv); li.appendChild(info);
+    list.appendChild(li);
 
-    info.appendChild(title); info.appendChild(meta); info.appendChild(tagRow); info.appendChild(actions);
-    listEl.appendChild(photoEl); listEl.appendChild(info);
-    listContainer.appendChild(listEl);
-
-    // GRID CARD
+    // grid card
     const card = document.createElement('div'); card.className='grid-card';
-    const photoWrap = document.createElement('div'); photoWrap.className='card-photo';
-    if(it.photo){
-      const img = document.createElement('img'); img.src = it.photo; img.alt=''; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover';
-      photoWrap.appendChild(img);
-    } else {
-      photoWrap.textContent = '🖼';
-    }
+    const p = document.createElement('div'); p.className='card-photo';
+    if(it.photo){ const img = document.createElement('img'); img.src = it.photo; img.alt=''; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; p.appendChild(img); } else { p.textContent='🖼'; }
     const body = document.createElement('div'); body.className='card-body';
-    body.innerHTML = `<div class="grid-title">${escapeHtml(it.name)}</div>
-                      <div class="grid-meta"><div class="muted">${escapeHtml(it.category)}</div><div>${it.status==='есть'?'<span class="badge green">Есть</span>':'<span class="badge red">Нужно</span>'}</div></div>`;
-    const cardActions = document.createElement('div'); cardActions.style.display='flex'; cardActions.style.gap='8px'; cardActions.style.marginTop='10px';
+    body.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${escapeHtml(it.name)}</strong><div class="small muted">${escapeHtml(it.category)}</div></div><div>${it.status==='есть'?'<span class="badge green">Есть</span>':'<span class="badge red">Нужно</span>'}</div></div>`;
+    const cactions = document.createElement('div'); cactions.style.marginTop='10px'; cactions.style.display='flex'; cactions.style.gap='8px';
     const e2 = document.createElement('button'); e2.className='btn ghost'; e2.textContent='Изменить'; e2.onclick = ()=> openEditModal(it.id);
-    const d2 = document.createElement('button'); d2.className='btn ghost'; d2.textContent='Удалить'; d2.onclick = ()=> { if(confirm('Удалить вещь?')) deleteItem(it.id); };
-    cardActions.appendChild(e2); cardActions.appendChild(d2);
-    body.appendChild(cardActions);
-    card.appendChild(photoWrap); card.appendChild(body);
-    gridContainer.appendChild(card);
+    const d2 = document.createElement('button'); d2.className='btn ghost'; d2.textContent='Удалить'; d2.onclick = ()=> { if(confirm('Удалить?')) deleteItem(it.id); };
+    cactions.appendChild(e2); cactions.appendChild(d2);
+    body.appendChild(cactions);
+    card.appendChild(p); card.appendChild(body);
+    grid.appendChild(card);
   });
 }
 
-/* --- Delete and edit with photo support --- */
+/* ---- Delete item ---- */
 function deleteItem(id){
   Object.keys(wardrobe).forEach(cat=>{
     wardrobe[cat] = (wardrobe[cat]||[]).filter(i=>i.id!==id);
   });
-  storageSet(STORAGE_KEYS.wardrobe, wardrobe);
+  storageSet(KEYS.wardrobe, wardrobe);
+  pushEvent('delete_item', { id }); renderAll();
+}
+
+/* ---- Mark worn (wear history) ---- */
+function markWorn(id){
+  let found=null; let catKey=null;
+  for(const [cat,arr] of Object.entries(wardrobe)){
+    const f = (arr||[]).find(i=>i.id===id);
+    if(f){ found=f; catKey=cat; break; }
+  }
+  if(!found) return alert('Не найдено');
+  const note = prompt('Записать заметку для события ношения (опционально)');
+  const date = new Date().toISOString();
+  found.wearHistory = found.wearHistory || [];
+  found.wearHistory.push({ date, note: note||'' });
+  found.usageCount = (found.usageCount||0) + 1;
+  found.lastWorn = date;
+  found.updatedAt = nowISO();
+  storageSet(KEYS.wardrobe, wardrobe);
+  pushEvent('mark_worn', { id, date, note });
   renderAll();
 }
 
+/* ---- Edit modal (with photo replace/delete) ---- */
 function openEditModal(id){
-  // find item
-  let item = null, catKey = null;
+  let item=null, catKey=null;
   for(const [cat,arr] of Object.entries(wardrobe)){
-    const found = (arr||[]).find(i=>i.id===id);
-    if(found){ item = found; catKey = cat; break; }
+    const f = (arr||[]).find(i=>i.id===id);
+    if(f){ item=f; catKey=cat; break; }
   }
-  if(!item) return alert('Вещь не найдена');
-
-  const modalRoot = document.getElementById('editModal');
-  modalRoot.innerHTML = '';
-  modalRoot.style.display = 'block';
-  const backdrop = document.createElement('div'); backdrop.className='modal-backdrop';
+  if(!item) return alert('Не найдено');
+  const modalRoot = document.getElementById('modalRoot'); modalRoot.innerHTML = '';
+  const back = document.createElement('div'); back.className='modal-backdrop';
   const modal = document.createElement('div'); modal.className='modal';
-
-  modal.innerHTML = `
-    <h3>Изменить вещь</h3>
-    <div style="display:grid;grid-template-columns:1fr 160px;gap:8px;margin-top:8px">
-      <input id="editName" type="text" value="${escapeHtml(item.name)}" />
-      <select id="editCategory">
-        <option value="suits">Костюмы</option><option value="shirts">Рубашки</option><option value="knitwear">Трикотаж</option><option value="polo">Поло</option><option value="pants">Брюки</option><option value="shoes">Обувь</option><option value="accessories">Аксессуары</option>
-      </select>
-      <select id="editStatus"><option value="есть">Есть</option><option value="нужен">Нужен</option></select>
-      <select id="editPriority"><option value="низкий">Низкий</option><option value="средний">Средний</option><option value="высокий">Высокий</option><option value="критичный">Критичный</option></select>
-      <input id="editTags" type="text" value="${escapeHtml(item.tags||'')}" style="grid-column:1/span2" />
-      <textarea id="editNotes" style="grid-column:1/span2">${escapeHtml(item.notes||'')}</textarea>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input id="editPhotoInput" type="file" accept="image/*" />
-      </div>
-      <div style="display:flex;justify-content:flex-end;align-items:center">
-        <button id="saveEditBtn" class="btn primary">Сохранить</button>
-      </div>
+  modal.innerHTML = `<h3>Редактировать вещь</h3>
+  <div style="display:grid;grid-template-columns:1fr 160px;gap:8px;margin-top:8px">
+    <input id="editName" type="text" value="${escapeHtml(item.name)}" />
+    <select id="editCategory"><option value="suits">Костюмы</option><option value="shirts">Рубашки</option><option value="knitwear">Трикотаж</option><option value="polo">Поло</option><option value="pants">Брюки</option><option value="shoes">Обувь</option><option value="accessories">Аксессуары</option></select>
+    <select id="editStatus"><option value="есть">Есть</option><option value="нужен">Нужен</option></select>
+    <select id="editPriority"><option value="низкий">Низкий</option><option value="средний">Средний</option><option value="высокий">Высокий</option><option value="критичный">Критичный</option></select>
+    <input id="editTags" type="text" value="${escapeHtml(item.tags||'')}" style="grid-column:1/span2" />
+    <textarea id="editNotes" style="grid-column:1/span2">${escapeHtml(item.notes||'')}</textarea>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input id="editPhotoInput" type="file" accept="image/*" />
     </div>
-    <div style="margin-top:12px" id="currentPhotoArea"></div>
-  `;
+    <div style="display:flex;justify-content:flex-end">
+      <button id="saveEditBtn" class="btn primary">Сохранить</button>
+    </div>
+  </div>
+  <div style="margin-top:12px" id="currentPhotoArea"></div>`;
+  back.appendChild(modal);
+  modalRoot.appendChild(back);
 
-  backdrop.appendChild(modal);
-  modalRoot.appendChild(backdrop);
-
-  // set current category/status/priority
   document.getElementById('editCategory').value = catKey;
   document.getElementById('editStatus').value = item.status || 'есть';
   document.getElementById('editPriority').value = item.priority || 'низкий';
 
-  const curArea = document.getElementById('currentPhotoArea');
-  curArea.innerHTML = '';
+  const cur = document.getElementById('currentPhotoArea');
+  cur.innerHTML = '';
   if(item.photo){
-    const wrap = document.createElement('div'); wrap.className='photo-preview';
-    const img = document.createElement('img'); img.src = item.photo; img.style.width='180px'; img.style.height='180px'; img.style.objectFit='cover'; img.style.borderRadius='8px';
-    const delBtn = document.createElement('button'); delBtn.className='del-photo'; delBtn.textContent='✕'; delBtn.title='Удалить фото';
-    delBtn.onclick = ()=> {
-      if(!confirm('Удалить фото?')) return;
-      item.photo = '';
-      // update storage
-      storageSet(STORAGE_KEYS.wardrobe, wardrobe);
-      curArea.innerHTML = '<div class="muted">Фото удалено</div>';
-    };
-    wrap.appendChild(img); wrap.appendChild(delBtn);
-    curArea.appendChild(wrap);
-  } else {
-    curArea.innerHTML = '<div class="muted">Фото отсутствует</div>';
-  }
+    const p = document.createElement('div'); p.className='photo-preview';
+    const img = document.createElement('img'); img.src = item.photo;
+    const d = document.createElement('button'); d.className='del-photo'; d.textContent='✕'; d.title='Удалить фото';
+    d.onclick = ()=> { if(confirm('Удалить фото?')){ item.photo=''; storageSet(KEYS.wardrobe, wardrobe); cur.innerHTML = '<div class="muted">Фото удалено</div>'; } };
+    p.appendChild(img); p.appendChild(d); cur.appendChild(p);
+  } else { cur.innerHTML = '<div class="muted">Фото отсутствует</div>'; }
 
-  // save handler
   document.getElementById('saveEditBtn').onclick = async ()=>{
-    const newName = (document.getElementById('editName').value||'').trim();
-    if(!newName) return alert('Название не может быть пустым');
+    const newName = (document.getElementById('editName').value||'').trim(); if(!newName) return alert('Введите имя');
     const newCat = document.getElementById('editCategory').value;
     const newStatus = document.getElementById('editStatus').value;
     const newPriority = document.getElementById('editPriority').value;
     const newTags = (document.getElementById('editTags').value||'').trim();
     const newNotes = (document.getElementById('editNotes').value||'').trim();
-    // handle new photo
-    const phInput = document.getElementById('editPhotoInput');
-    if(phInput.files && phInput.files[0]){
-      const data = await fileToDataURL(phInput.files[0]);
-      item.photo = data;
-    }
-    // if category changed, move item
+    const photoInput = document.getElementById('editPhotoInput');
+    if(photoInput.files && photoInput.files[0]){ item.photo = await fileToDataURL(photoInput.files[0]); }
+    // move category if changed
     if(newCat !== catKey){
-      // remove from old
-      wardrobe[catKey] = (wardrobe[catKey]||[]).filter(i => i.id !== item.id);
-      item.name = newName; item.status=newStatus; item.priority=newPriority; item.tags=newTags; item.notes=newNotes;
+      wardrobe[catKey] = (wardrobe[catKey]||[]).filter(i=>i.id!==item.id);
+      item.name = newName; item.status=newStatus; item.priority=newPriority; item.tags=newTags; item.notes=newNotes; item.updatedAt = nowISO();
       wardrobe[newCat] = wardrobe[newCat] || [];
       wardrobe[newCat].push(item);
     } else {
-      Object.assign(item, { name:newName, status:newStatus, priority:newPriority, tags:newTags, notes:newNotes });
+      Object.assign(item, { name:newName, status:newStatus, priority:newPriority, tags:newTags, notes:newNotes, updatedAt: nowISO() });
     }
-    storageSet(STORAGE_KEYS.wardrobe, wardrobe);
-    closeEditModal();
-    renderAll();
+    storageSet(KEYS.wardrobe, wardrobe);
+    pushEvent('update_item', { id:item.id, name:item.name });
+    closeModal(); renderAll();
   };
 
-  // close on backdrop click
-  backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeEditModal(); });
+  back.addEventListener('click', (e)=>{ if(e.target===back) closeModal(); });
 }
+function closeModal(){ document.getElementById('modalRoot').innerHTML = ''; }
 
-function closeEditModal(){ const modalRoot=document.getElementById('editModal'); modalRoot.innerHTML=''; modalRoot.style.display='none'; }
-
-/* --- Shopping functions --- */
+/* ---- Shopping: add/toggle/purchasedAt and reminders ---- */
 document.getElementById('addShopBtn').addEventListener('click', ()=>{
-  const item = (document.getElementById('shopName').value||'').trim(); if(!item) return alert('Введите название покупки');
-  const priority = document.getElementById('shopPriority').value; const price = document.getElementById('shopPrice').value;
-  const list = storageGet(STORAGE_KEYS.shopping) || [];
-  const obj = { id: uid(), item, priority, price, category:'', plannedDate:'', purchased:false };
-  list.push(obj); storageSet(STORAGE_KEYS.shopping, list);
-  document.getElementById('shopName').value=''; document.getElementById('shopPrice').value='';
+  const name = (document.getElementById('shopName').value||'').trim(); if(!name) return alert('Введите что купить');
+  const priority = document.getElementById('shopPriority').value; const price = (document.getElementById('shopPrice').value||'').trim();
+  const planned = document.getElementById('shopPlannedDate').value || '';
+  shopping = storageGet(KEYS.shopping) || [];
+  const obj = { id: uid(), item: name, priority, price, plannedDate: planned, purchased:false, purchasedAt:'', createdAt: nowISO() };
+  shopping.push(obj);
+  storageSet(KEYS.shopping, shopping);
+  pushEvent('add_shopping', { id: obj.id, item: obj.item });
+  document.getElementById('shopName').value=''; document.getElementById('shopPrice').value=''; document.getElementById('shopPlannedDate').value='';
   renderShopping();
 });
-
 function renderShopping(){
-  const s = storageGet(STORAGE_KEYS.shopping) || [];
-  const active = s.filter(i=>!i.purchased);
-  const completed = s.filter(i=>i.purchased);
-  const actCont = document.getElementById('activePurchases'); actCont.innerHTML='';
-  active.forEach(i=>{
+  shopping = storageGet(KEYS.shopping) || [];
+  const active = shopping.filter(s=>!s.purchased);
+  const comp = shopping.filter(s=>s.purchased);
+  const actCont = document.getElementById('activePurchases'); actCont.innerHTML = '';
+  active.forEach(s=>{
     const d = document.createElement('div'); d.className='item';
-    d.innerHTML = `<div style="flex:1"><div><strong>${escapeHtml(i.item)}</strong> <span class="muted small">${escapeHtml(i.priority)} ${i.price? '— ' + escapeHtml(i.price): ''}</span></div></div>`;
-    const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='6px';
-    const tog = document.createElement('button'); tog.className='btn ghost small'; tog.textContent='Куплено'; tog.onclick = ()=> togglePurchased(i.id);
-    const rem = document.createElement('button'); rem.className='btn ghost small'; rem.textContent='Удалить'; rem.onclick = ()=> removeShopping(i.id);
-    actions.appendChild(tog); actions.appendChild(rem);
-    d.appendChild(actions);
+    d.innerHTML = `<div style="flex:1"><strong>${escapeHtml(s.item)}</strong> <div class="small muted">${escapeHtml(s.priority)} ${s.price? '— '+escapeHtml(s.price):''} ${s.plannedDate? ' • план: '+escapeHtml(s.plannedDate):''}</div></div>`;
+    const b1=document.createElement('button'); b1.className='btn ghost'; b1.textContent='Отметить куплено'; b1.onclick=()=> markPurchased(s.id);
+    const b2=document.createElement('button'); b2.className='btn ghost'; b2.textContent='Удалить'; b2.onclick=()=>{ if(confirm('Удалить покупку?')) removeShopping(s.id); };
+    const actions=document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.appendChild(b1); actions.appendChild(b2); d.appendChild(actions);
     actCont.appendChild(d);
   });
-  const compCont = document.getElementById('completedPurchases'); compCont.innerHTML='';
-  completed.forEach(i=>{
+  const compCont = document.getElementById('completedPurchases'); compCont.innerHTML = '';
+  comp.forEach(s=>{
     const d = document.createElement('div'); d.className='item';
-    d.innerHTML = `<div style="flex:1"><div><strong style="text-decoration:line-through">${escapeHtml(i.item)}</strong> <span class="muted small">${i.purchasedDate||''}</span></div></div>`;
-    const rem = document.createElement('button'); rem.className='btn ghost small'; rem.textContent='Удалить'; rem.onclick = ()=> removeShopping(i.id);
-    d.appendChild(rem); compCont.appendChild(d);
+    d.innerHTML = `<div style="flex:1"><strong style="text-decoration:line-through">${escapeHtml(s.item)}</strong> <div class="small muted">${s.purchasedAt || ''}</div></div>`;
+    const del=document.createElement('button'); del.className='btn ghost'; del.textContent='Удалить'; del.onclick=()=> removeShopping(s.id);
+    d.appendChild(del); compCont.appendChild(d);
   });
 }
-function removeShopping(id){ let list=storageGet(STORAGE_KEYS.shopping)||[]; list=list.filter(i=>i.id!==id); storageSet(STORAGE_KEYS.shopping,list); renderShopping(); }
-function togglePurchased(id){ let list=storageGet(STORAGE_KEYS.shopping)||[]; list=list.map(i=>i.id===id?{...i,purchased:!i.purchased,purchasedDate:!i.purchased? (new Date()).toISOString().split('T')[0] : null}:i); storageSet(STORAGE_KEYS.shopping,list); renderShopping(); }
+function markPurchased(id){
+  shopping = storageGet(KEYS.shopping) || [];
+  shopping = shopping.map(s => s.id===id ? {...s, purchased:true, purchasedAt: nowISO()} : s);
+  storageSet(KEYS.shopping, shopping);
+  pushEvent('purchased', { id });
+  renderShopping(); renderAnalytics();
+}
+function removeShopping(id){ shopping = storageGet(KEYS.shopping) || []; shopping = shopping.filter(s=>s.id!==id); storageSet(KEYS.shopping, shopping); renderShopping(); }
 
-/* --- Outfits --- */
+/* ---- Outfits generator & planner ---- */
+document.getElementById('generateBtn').addEventListener('click', ()=> generateOutfits());
 document.getElementById('addOutfitBtn').addEventListener('click', ()=>{
-  const name=(document.getElementById('outfitName').value||'').trim(); if(!name) return alert('Введите название образа');
-  const category=document.getElementById('outfitCategory').value; const season=document.getElementById('outfitSeason').value;
-  const items=(document.getElementById('outfitItems').value||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const list = storageGet(STORAGE_KEYS.outfits) || []; list.push({id:uid(),name,category,season,items,created:new Date().toISOString()}); storageSet(STORAGE_KEYS.outfits,list);
-  document.getElementById('outfitName').value=''; document.getElementById('outfitItems').value=''; renderOutfits();
+  const name = (document.getElementById('outfitName').value||'').trim(); if(!name) return alert('Введите имя образа');
+  const itemsRaw = (document.getElementById('outfitItems').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const season = document.getElementById('outfitSeason').value || '';
+  outfits = storageGet(KEYS.outfits) || []; outfits.push({ id:uid(), name, items: itemsRaw, season, createdAt: nowISO() }); storageSet(KEYS.outfits, outfits); document.getElementById('outfitName').value=''; document.getElementById('outfitItems').value=''; renderOutfits();
 });
-function renderOutfits(){
-  const list = storageGet(STORAGE_KEYS.outfits) || [];
-  const cont = document.getElementById('outfitsList'); cont.innerHTML='';
-  if(list.length===0){ cont.innerHTML='<div class="muted">Нет образов</div>'; return; }
-  const w = storageGet(STORAGE_KEYS.wardrobe) || wardrobe;
-  const all = flatten(w);
-  list.forEach(o=>{
-    const check = o.items.map(it=>({item:it, have: all.some(wi => wi.name.toLowerCase().includes(it.toLowerCase()) && wi.status==='есть')}));
+function generateOutfits(){
+  const occasion = document.getElementById('generatorOccasion').value || '';
+  const all = flatten(storageGet(KEYS.wardrobe)||wardrobe).filter(i=>i.status==='есть');
+  // simple heuristics: build combinations of [suits|shirts] + pants + shoes etc.
+  const suits = all.filter(i=>i.category==='suits');
+  const shirts = all.filter(i=>i.category==='shirts');
+  const pants = all.filter(i=>i.category==='pants');
+  const shoes = all.filter(i=>i.category==='shoes');
+  const suggestions = [];
+  // generate suit outfits
+  suits.forEach(s=>{ shirts.forEach(sh=>{ shoes.forEach(sho=>{ suggestions.push({ items:[s,sh,sho], score: (s.usageCount||0)+(sh.usageCount||0)+(sho.usageCount||0) }); }); }); });
+  // business casual: shirt + pants + shoes
+  shirts.forEach(sh=>{ pants.forEach(p=>{ shoes.forEach(sho=>{ suggestions.push({ items:[sh,p,sho], score:(sh.usageCount||0)+(p.usageCount||0)+(sho.usageCount||0) }); }); }); });
+  // sort by score descending (more used items first)
+  suggestions.sort((a,b)=>b.score - a.score);
+  const container = document.getElementById('generatedOutfits'); container.innerHTML = '';
+  suggestions.slice(0,8).forEach((sug, idx)=>{
     const div = document.createElement('div'); div.className='card'; div.style.marginBottom='8px';
-    div.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(o.name)}</strong> <span class="muted">${escapeHtml(o.category||'')}</span></div><div><button class="btn ghost small">Удалить</button></div></div>`;
-    const listEl = document.createElement('div'); listEl.style.marginTop='8px';
-    check.forEach(c=>{ const row=document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.innerHTML=`<div class="small">${escapeHtml(c.item)}</div><div class="small ${c.have?'':'muted'}">${c.have?'Есть':'Нужно'}</div>`; listEl.appendChild(row); });
-    div.appendChild(listEl);
-    const delBtn = div.querySelector('button'); delBtn.onclick = ()=> { if(confirm('Удалить образ?')) { deleteOutfit(o.id); } };
+    const names = sug.items.map(x=>x.name).join(' • ');
+    div.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>Предложение ${idx+1}</strong><div class="small muted">${escapeHtml(names)}</div></div><div><button class="btn ghost">Сохранить как образ</button></div></div>`;
+    const btn = div.querySelector('button'); btn.onclick = ()=> { outfits = storageGet(KEYS.outfits)||[]; outfits.push({ id:uid(), name: 'Предложение ' + (idx+1), items: sug.items.map(i=>i.name), season:'', createdAt: nowISO() }); storageSet(KEYS.outfits, outfits); renderOutfits(); alert('Образ добавлен'); };
+    container.appendChild(div);
+  });
+}
+function renderOutfits(){
+  outfits = storageGet(KEYS.outfits) || [];
+  const cont = document.getElementById('outfitsList'); cont.innerHTML = '';
+  if(outfits.length===0){ cont.innerHTML = '<div class="muted">Нет образов</div>'; return; }
+  outfits.forEach(o=>{
+    const div = document.createElement('div'); div.className='card'; div.style.marginBottom='8px';
+    div.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(o.name)}</strong> <div class="small muted">${escapeHtml(o.season||'')}</div></div><div><button class="btn ghost small">Удалить</button></div></div><div style="margin-top:8px" class="small muted">${escapeHtml((o.items||[]).join(', '))}</div>`;
+    div.querySelector('button').onclick = ()=> { if(confirm('Удалить образ?')){ outfits = outfits.filter(x=>x.id!==o.id); storageSet(KEYS.outfits, outfits); renderOutfits(); } };
     cont.appendChild(div);
   });
 }
-function deleteOutfit(id){ let l=storageGet(STORAGE_KEYS.outfits)||[]; l=l.filter(o=>o.id!==id); storageSet(STORAGE_KEYS.outfits,l); renderOutfits(); }
 
-/* --- Links --- */
-document.getElementById('addLinkBtn').addEventListener('click', ()=>{
-  const url=(document.getElementById('newLink').value||'').trim(); if(!url) return alert('Введите ссылку');
-  const list = storageGet(STORAGE_KEYS.links)||[]; list.push({id:uid(),url}); storageSet(STORAGE_KEYS.links,list); document.getElementById('newLink').value=''; renderLinks();
-});
-function renderLinks(){ const list = storageGet(STORAGE_KEYS.links)||[]; const cont=document.getElementById('linksList'); cont.innerHTML=''; if(list.length===0){ cont.innerHTML='<div class="muted">Ссылок нет</div>'; return;} list.forEach(l=>{ const d=document.createElement('div'); d.className='item'; d.innerHTML=`<div style="flex:1"><a href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer" class="small">${escapeHtml(l.url)}</a></div>`; const del=document.createElement('button'); del.className='btn ghost small'; del.textContent='Удалить'; del.onclick=()=>{ let arr=storageGet(STORAGE_KEYS.links)||[]; arr=arr.filter(x=>x.id!==l.id); storageSet(STORAGE_KEYS.links,arr); renderLinks(); }; d.appendChild(del); cont.appendChild(d); }); }
-
-/* --- Analytics view --- */
-function renderAnalyticsView(){
-  const items = flatten(storageGet(STORAGE_KEYS.wardrobe) || wardrobe);
-  const s = { total: items.length, owned: items.filter(i=>i.status==='есть').length, needed: items.filter(i=>i.status!=='есть').length, critical: items.filter(i => (i.priority||'').toString().toLowerCase().includes('крит')).length };
-  const events = storageGet(STORAGE_KEYS.analytics) || [];
-  const container = document.getElementById('analyticsContent');
-  container.innerHTML = `<div class="card"><div style="display:flex;gap:16px;flex-wrap:wrap"><div style="min-width:140px"><div class="small muted">Всего вещей</div><div class="kpi">${s.total}</div></div><div style="min-width:140px"><div class="small muted">Есть</div><div class="kpi">${s.owned}</div></div><div style="min-width:140px"><div class="small muted">Нужно купить</div><div class="kpi">${s.needed}</div></div><div style="min-width:140px"><div class="small muted">Критичных</div><div class="kpi">${s.critical}</div></div><div style="min-width:140px"><div class="small muted">Событий аналитики</div><div class="kpi">${events.length}</div></div></div></div>`;
+/* Weekly planner: simple mapping day->outfitId */
+const WEEK_DAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+function renderWeekPlanner(){
+  const planner = JSON.parse(localStorage.getItem('wardrobe-planner') || '{}');
+  const container = document.getElementById('weekPlanner'); container.innerHTML = '';
+  outfits = storageGet(KEYS.outfits) || [];
+  for(let i=0;i<7;i++){
+    const cell = document.createElement('div'); cell.className='card'; cell.style.padding='8px';
+    const day = WEEK_DAYS[i];
+    const sel = document.createElement('select'); sel.style.width='100%';
+    const opt0 = document.createElement('option'); opt0.value=''; opt0.textContent='— пусто —'; sel.appendChild(opt0);
+    outfits.forEach(o=>{ const op = document.createElement('option'); op.value=o.id; op.textContent=o.name; if(planner[i]==o.id) op.selected=true; sel.appendChild(op); });
+    sel.onchange = ()=>{ const p = JSON.parse(localStorage.getItem('wardrobe-planner')||'{}'); p[i]=sel.value; localStorage.setItem('wardrobe-planner', JSON.stringify(p)); alert('Сохранено'); };
+    const title = document.createElement('div'); title.innerHTML = `<strong>${day}</strong>`; title.className='small muted';
+    cell.appendChild(title); cell.appendChild(sel);
+    container.appendChild(cell);
+  }
 }
 
-/* --- sidebar and totals --- */
-function renderSidebar(){
-  const items = flatten(storageGet(STORAGE_KEYS.wardrobe) || wardrobe);
+/* ---- Recommendations ---- */
+function computeRecommendations(){
+  wardrobe = storageGet(KEYS.wardrobe) || wardrobe;
+  const items = flatten(wardrobe);
+  const recs = [];
+  // basics check
+  const basicCats = ['suits','shirts','pants','shoes'];
+  basicCats.forEach(cat=>{
+    const cnt = (wardrobe[cat]||[]).filter(i=>i.status==='есть').length;
+    if(cnt === 0) recs.push({ type:'missing_basic', text:`У вас отсутствуют базовые вещи: ${cat}` });
+  });
+  // update suggestion by age: if median age > 3 years (1095 days)
+  const byCat = {};
+  Object.entries(wardrobe).forEach(([cat,arr]) => { byCat[cat] = arr||[]; });
+  Object.entries(byCat).forEach(([cat,arr])=>{
+    if(!arr || arr.length===0) return;
+    const ages = arr.map(it => daysBetween(it.addedAt || it.updatedAt || nowISO(), nowISO()));
+    const median = ages.sort((a,b)=>a-b)[Math.floor(ages.length/2)] || 0;
+    if(median > 365*3) recs.push({ type:'old_category', text:`В категории ${cat} вещи в среднем старые (≈ ${Math.round(median/365)} лет). Подумайте об обновлении.` });
+  });
+  // critical purchases
+  const crit = (storageGet(KEYS.shopping)||[]).filter(s=> (s.priority||'').toString().toLowerCase().includes('крит'));
+  if(crit.length) recs.push({ type:'criticals', text:`Критичные покупки: ${crit.map(c=>c.item).slice(0,5).join(', ')}` });
+
+  // tag frequency analysis
+  const tags = {};
+  items.forEach(i=> (i.tags||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean).forEach(t => tags[t] = (tags[t]||0)+1));
+  const sortedTags = Object.entries(tags).sort((a,b)=>b[1]-a[1]);
+  if(sortedTags.length){
+    recs.push({ type:'tags_top', text: `Топ тегов: ${sortedTags.slice(0,5).map(t=>t[0]).join(', ')}` });
+    const low = sortedTags.filter(t=>t[1]===1).map(t=>t[0]).slice(0,5);
+    if(low.length) recs.push({ type:'tags_low', text:`Теги с низкой частотой: ${low.join(', ')}` });
+  }
+  return recs;
+}
+
+/* ---- Analytics UI ---- */
+function renderEvents(){
+  analytics = storageGet(KEYS.analytics) || [];
+  const el = document.getElementById('eventsLog'); el.innerHTML = '';
+  analytics.slice(0,200).forEach(ev=>{
+    const d = document.createElement('div'); d.className='small muted'; d.style.marginBottom='6px';
+    d.textContent = `${new Date(ev.ts).toLocaleString()} • ${ev.type} • ${JSON.stringify(ev.payload).slice(0,80)}`;
+    el.appendChild(d);
+  });
+}
+
+/* purchases by month */
+function renderPurchasesByMonth(){
+  shopping = storageGet(KEYS.shopping) || [];
+  const bought = shopping.filter(s=>s.purchased && s.purchasedAt);
+  const map = {};
+  bought.forEach(b=>{
+    const d = new Date(b.purchasedAt);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    map[key] = map[key]||[]; map[key].push(b);
+  });
+  const cont = document.getElementById('purchasesByMonth'); cont.innerHTML = '';
+  Object.entries(map).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([month,arr])=>{
+    const div = document.createElement('div'); div.className='small muted'; div.style.marginBottom='6px';
+    div.textContent = `${month}: ${arr.length} покупок — ${arr.map(x=>x.item).slice(0,5).join(', ')}`;
+    cont.appendChild(div);
+  });
+}
+
+/* ---- Recommendations UI ---- */
+function renderRecommendations(){
+  const recs = computeRecommendations();
+  const cont = document.getElementById('recommendations'); cont.innerHTML = '';
+  const sb = document.getElementById('sidebarRecs'); sb.innerHTML = '';
+  recs.forEach(r=>{
+    const d = document.createElement('div'); d.className='small muted'; d.style.marginBottom='6px'; d.textContent = '• ' + r.text;
+    cont.appendChild(d);
+    const d2 = d.cloneNode(true); sb.appendChild(d2);
+  });
+}
+
+/* ---- Sidebar tags ---- */
+function renderTopTags(){
+  const items = flatten(storageGet(KEYS.wardrobe) || wardrobe);
+  const map = {};
+  items.forEach(i=> (i.tags||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean).forEach(t=> map[t]=(map[t]||0)+1));
+  const arr = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const el = document.getElementById('topTags'); el.innerHTML = '';
+  if(arr.length===0){ el.innerHTML = '<div class="muted">Нет тегов</div>'; return; }
+  arr.forEach(a=>{ const d=document.createElement('div'); d.className='small muted'; d.textContent = `#${a[0]} — ${a[1]}`; el.appendChild(d); });
+}
+
+/* ---- Analytics totals ---- */
+function renderAnalytics(){
+  const items = flatten(storageGet(KEYS.wardrobe) || wardrobe);
   const total = items.length;
   const owned = items.filter(i=>i.status==='есть').length;
-  const completion = total? Math.round((owned/total)*100):0;
+  const needed = items.filter(i=>i.status!=='есть').length;
+  const critical = items.filter(i=> (i.priority||'').toString().toLowerCase().includes('крит')).length;
+  document.getElementById('anTotal').textContent = total;
+  document.getElementById('anOwned').textContent = owned;
+  document.getElementById('anNeeded').textContent = needed;
+  document.getElementById('anCritical').textContent = critical;
+
+  // sidebar summary
   document.getElementById('statTotal').textContent = `${total} вещей`;
+  const completion = total? Math.round((owned/total)*100):0;
   document.getElementById('statCompletion').textContent = `${completion}%`;
-
-  // categories stats
-  const cats = Object.entries(storageGet(STORAGE_KEYS.wardrobe) || wardrobe).map(([cat,arr])=>{ const tot=(arr||[]).length; const own=(arr||[]).filter(i=>i.status==='есть').length; const percent=tot?Math.round((own/tot)*100):0; return {cat,tot,own,percent}; });
-  const catCont=document.getElementById('categoryStats'); catCont.innerHTML=''; cats.forEach(c=>{ const r=document.createElement('div'); r.style.marginBottom='10px'; r.innerHTML=`<div style="display:flex;justify-content:space-between"><div class="small">${escapeHtml(c.cat)}</div><div class="small">${c.own}/${c.tot}</div></div><div class="progress" style="margin-top:6px"><i style="width:${c.percent}%"></i></div>`; catCont.appendChild(r); });
-
-  // top tags
-  const tags = getTopTags(10); const tagsCont = document.getElementById('topTags'); tagsCont.innerHTML=''; if(tags.length===0) tagsCont.innerHTML='<div class="muted">Нет тегов</div>'; tags.forEach(t=>{ const el=document.createElement('div'); el.className='small muted'; el.textContent = `#${t.tag} — ${t.count}`; tagsCont.appendChild(el); });
 }
 
-function getTopTags(topN=10){ const all = flatten(storageGet(STORAGE_KEYS.wardrobe) || wardrobe); const map={}; all.forEach(i=>{ (i.tags||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean).forEach(t=> map[t]=(map[t]||0)+1); }); return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,topN).map(([tag,count])=>({tag,count})); }
+/* ---- Export / Import JSON ---- */
+document.getElementById('exportJsonBtn').addEventListener('click', ()=>{
+  const payload = {
+    wardrobe: storageGet(KEYS.wardrobe) || {},
+    shopping: storageGet(KEYS.shopping) || [],
+    outfits: storageGet(KEYS.outfits) || [],
+    links: storageGet(KEYS.links) || [],
+    analytics: storageGet(KEYS.analytics) || []
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download = 'wardrobe-export.json'; a.click(); URL.revokeObjectURL(url);
+});
+document.getElementById('importJsonBtn').addEventListener('click', ()=>{
+  const input = document.createElement('input'); input.type='file'; input.accept='application/json';
+  input.onchange = async ()=> {
+    const f = input.files[0]; if(!f) return;
+    const txt = await f.text(); try{ const data = JSON.parse(txt); if(data.wardrobe) storageSet(KEYS.wardrobe, data.wardrobe); if(data.shopping) storageSet(KEYS.shopping, data.shopping); if(data.outfits) storageSet(KEYS.outfits, data.outfits); if(data.links) storageSet(KEYS.links, data.links); if(data.analytics) storageSet(KEYS.analytics, data.analytics); alert('Импорт завершён'); renderAll(); } catch(e){ alert('Ошибка парсинга JSON'); }
+  };
+  input.click();
+});
 
-/* --- Export --- */
-async function exportFullReport(){
-  const items = flatten(storageGet(STORAGE_KEYS.wardrobe) || wardrobe);
-  const total = items.length; const owned = items.filter(i=>i.status==='есть').length;
-  let txt = `Отчёт: Мой гардероб\nДата: ${new Date().toISOString()}\n\nВсего: ${total}\nЕсть: ${owned}\n\nСписок:\n`;
-  items.forEach(i=> txt += `- ${i.name} (${i.category}) ${i.status} ${i.priority} ${i.tags? ' #' + i.tags : ''}\n`);
-  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'wardrobe-report.txt'; a.click(); URL.revokeObjectURL(url);
+/* ---- Events / render orchestration ---- */
+function renderAll(){
+  wardrobe = storageGet(KEYS.wardrobe) || wardrobe;
+  shopping = storageGet(KEYS.shopping) || shopping;
+  outfits = storageGet(KEYS.outfits) || outfits;
+  analytics = storageGet(KEYS.analytics) || analytics;
+  reminders = storageGet(KEYS.reminders) || reminders;
+  renderItems();
+  renderShopping();
+  renderOutfits();
+  renderOutfits(); // twice for safety
+  renderEvents();
+  renderPurchasesByMonth();
+  renderRecommendations();
+  renderTopTags();
+  renderAnalytics();
+  renderWeekPlanner();
+  renderMonthBudget();
+}
+renderAll();
+
+/* ---- Reminders: local check and browser notifications ---- */
+document.getElementById('enableNotifBtn').addEventListener('click', async ()=>{
+  if(!('Notification' in window)){ alert('Ваш браузер не поддерживает уведомления'); return; }
+  const res = await Notification.requestPermission();
+  if(res === 'granted') alert('Уведомления включены'); else alert('Уведомления не предоставлены');
+});
+
+/* reminders storage, add simple reminder for shopping item */
+function addReminderForShopping(shoppingId, whenISO){
+  reminders = storageGet(KEYS.reminders) || [];
+  reminders.push({ id: uid(), type:'shopping', targetId: shoppingId, when: whenISO, sent:false });
+  storageSet(KEYS.reminders, reminders);
+  pushEvent('add_reminder', { id: shoppingId, when: whenISO });
 }
 
-/* --- UI hooks --- */
-document.getElementById('addItemBtn').addEventListener('click', addItem);
-document.getElementById('search').addEventListener('input', ()=> renderItems());
-document.getElementById('filterStatus').addEventListener('change', ()=> renderItems());
-document.getElementById('filterPriority').addEventListener('change', ()=> renderItems());
+/* scheduled check every minute for due reminders (works while page is open) */
+setInterval(checkReminders, 60*1000);
+function checkReminders(){
+  reminders = storageGet(KEYS.reminders) || [];
+  const now = new Date();
+  reminders.forEach(r=>{
+    if(!r.sent && new Date(r.when) <= now){
+      // show notification
+      showNotification(`Напоминание`, r.type === 'shopping' ? `Не забудьте покупку: ${getShoppingTitle(r.targetId)}` : 'Напоминание');
+      r.sent = true;
+      pushEvent('reminder_sent', { id: r.id });
+    }
+  });
+  storageSet(KEYS.reminders, reminders);
+}
+function showNotification(title, body){
+  if('Notification' in window && Notification.permission === 'granted'){
+    try{ new Notification(title, { body }); } catch(e){ alert(`${title}\n\n${body}`); }
+  } else {
+    alert(`${title}\n\n${body}`);
+  }
+}
+function getShoppingTitle(id){ const s = (storageGet(KEYS.shopping)||[]).find(x=>x.id===id); return s? s.item : 'покупка'; }
 
-document.getElementById('exportBtn').addEventListener('click', exportFullReport);
+/* ---- Analytics rendering helpers ---- */
+function renderMonthBudget(){
+  shopping = storageGet(KEYS.shopping) || [];
+  const monthKey = (()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })();
+  const bought = shopping.filter(s=>s.purchased && s.purchasedAt && s.purchasedAt.startsWith(monthKey));
+  const total = bought.reduce((sum,s)=>{ const p = parseFloat((s.price||'').replace(/[^\d.,]/g,'').replace(',','.')); return sum + (isNaN(p)?0:p); }, 0);
+  const el = document.getElementById('monthBudget'); el.innerHTML = `<div class="small muted">Потрачено в ${monthKey}: <strong>${total ? total.toFixed(2) : '0'}</strong></div>`;
+}
 
-/* Tabs switching */
+/* ---- Tabs switching ---- */
 const tabs = document.querySelectorAll('.tab');
 function showTab(name){
-  ['wardrobe','shopping','outfits','inspiration','analytics'].forEach(id=>{
+  ['wardrobe','shopping','outfits','analytics','settings'].forEach(id=>{
     const el = document.getElementById(id + 'Section');
     if(el) el.style.display = (id === name) ? 'block' : 'none';
   });
   tabs.forEach(t=> t.classList.toggle('active', t.dataset.tab === name));
-  // render specific
-  if(name === 'shopping') renderShopping();
-  if(name === 'outfits') renderOutfits();
-  if(name === 'inspiration') renderLinks();
-  if(name === 'analytics') renderAnalyticsView();
-  if(name === 'wardrobe') renderItems();
+  // re-render specific if needed
+  if(name==='analytics'){ renderAll(); }
 }
-tabs.forEach(t => t.addEventListener('click', ()=> showTab(t.dataset.tab)));
+tabs.forEach(t=> t.addEventListener('click', ()=> showTab(t.dataset.tab)));
 
-/* initial render */
-function renderAll(){ wardrobe = storageGet(STORAGE_KEYS.wardrobe) || wardrobe; renderItems(); renderSidebar(); renderShopping(); renderOutfits(); renderLinks(); renderAnalyticsView(); }
-renderAll();
-setView('list');
+/* ---- Helper render calls for UI initial bindings ---- */
+document.getElementById('search').addEventListener('input', renderItems);
+document.getElementById('filterStatus').addEventListener('change', renderItems);
+document.getElementById('filterPriority').addEventListener('change', renderItems);
 
-/* expose for inline onclicks */
-window.openEditModal = openEditModal;
-window.deleteItem = deleteItem;
+/* expose some globals for debugging/testing in console */
+window._WARDROBE = wardrobe;
+window._SHOPPING = shopping;
+window._OUTFITS = outfits;
+window.pushEvent = pushEvent;
 
-/* ensure mobile toolbar visibility (kept simple) */
-function updateMobileToolbar(){ /* placeholder if needed */ }
-window.addEventListener('resize', updateMobileToolbar);
+/* initial small cron: check reminders on load */
+checkReminders();
 
-/* close modal on escape */
-window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeEditModal(); });
+/* Accessibility: escape key closes modal */
+window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ closeModal(); } });
 
 </script>
 </body>
