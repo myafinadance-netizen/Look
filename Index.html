@@ -1,48 +1,7 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <title>Wardrobe App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Package, ShoppingBag, Star, Lightbulb, Trash2, Edit2, Save, TrendingUp, Download, Tag, X, Check, Calendar, Grid, List, Camera, Image } from 'lucide-react';
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- React -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-
-  <!-- Babel -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Lucide -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-
-<body class="bg-gray-900">
-  <div id="root"></div>
-
-  <script type="text/babel">
-
-    const {
-      Plus, Search, Package, ShoppingBag, Star, Lightbulb,
-      Trash2, Edit2, Save, Filter, TrendingUp, Download,
-      Tag, X, Check, Calendar, Grid, List, Camera,
-      Image, BarChart3, PieChart, Activity
-    } = lucideReact;
-
-    const storage = {
-      get(key) {
-        const value = localStorage.getItem(key);
-        return value ? { value } : null;
-      },
-      set(key, value) {
-        localStorage.setItem(key, value);
-      }
-    };
-
-    import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, ShoppingBag, Star, Lightbulb, Trash2, Edit2, Save, Filter, TrendingUp, Download, Tag, X, Check, Calendar, Grid, List, Camera, Image, BarChart3, PieChart, Activity } from 'lucide-react';
+const ANALYTICS_KEY = 'wardrobe-analytics-v1';
 
 const WardrobeApp = () => {
   const [activeTab, setActiveTab] = useState('wardrobe');
@@ -65,8 +24,43 @@ const WardrobeApp = () => {
   const [viewMode, setViewMode] = useState('list'); // 'list' или 'grid'
   const [uploadingPhoto, setUploadingPhoto] = useState(null);
 
+  // Analytics UI toggle
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsEvents, setAnalyticsEvents] = useState([]);
+
+  // ---- Analytics helpers ----
+  const trackEvent = async (type, payload = {}) => {
+    try {
+      const event = { id: Date.now(), type, payload, ts: new Date().toISOString() };
+      const existing = JSON.parse(localStorage.getItem(ANALYTICS_KEY) || '[]');
+      existing.push(event);
+      localStorage.setItem(ANALYTICS_KEY, JSON.stringify(existing));
+      setAnalyticsEvents(existing.slice(-200));
+      if (window.ANALYTICS_ENDPOINT) {
+        fetch(window.ANALYTICS_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(event),
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.error('Analytics error', e);
+    }
+  };
+
+  const loadAnalyticsFromStorage = () => {
+    try {
+      const existing = JSON.parse(localStorage.getItem(ANALYTICS_KEY) || '[]');
+      setAnalyticsEvents(existing.slice(-200));
+    } catch (e) {
+      setAnalyticsEvents([]);
+    }
+  };
+
+  // ---- Data loading ----
   useEffect(() => {
     loadData();
+    loadAnalyticsFromStorage();
   }, []);
 
   const loadData = async () => {
@@ -133,7 +127,7 @@ const WardrobeApp = () => {
       { id: 12, name: 'Водолазка белая', status: 'есть', priority: 'низкий', tags: 'зима, базовый', notes: '' },
       { id: 13, name: 'Водолазка синяя (новая)', status: 'есть', priority: 'низкий', tags: 'зима', notes: '' },
       { id: 14, name: 'Водолазка черная', status: 'нужна', priority: 'высокий', tags: 'зима', notes: '' },
-      { id: 15, name: 'Жилетка синяя шерсть 100%', status: 'есть', priority: 'низкий', tags: 'тренировки', notes: '' },
+      { id: 15, name: 'Жил��тка синяя шерсть 100%', status: 'есть', priority: 'низкий', tags: 'тренировки', notes: '' },
       { id: 16, name: 'Свитер серый', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
       { id: 17, name: 'Свитер голубой', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
       { id: 18, name: 'Свитер синий', status: 'есть', priority: 'низкий', tags: 'casual', notes: '' },
@@ -210,6 +204,7 @@ const WardrobeApp = () => {
     }
   };
 
+  // ---- Instrumented actions ----
   const addWardrobeItem = async () => {
     if (!newItem.name) return;
     const category = newItem.category;
@@ -219,18 +214,22 @@ const WardrobeApp = () => {
       [category]: [...(wardrobeItems[category] || []), item]
     };
     await saveData('wardrobe-data-v2', updated, setWardrobeItems);
+    trackEvent('add_item', { category, name: item.name, priority: item.priority, status: item.status });
     setNewItem({ name: '', category: 'suits', status: 'есть', priority: 'низкий', tags: '', notes: '', photo: '' });
   };
 
   const deleteWardrobeItem = async (category, itemId) => {
+    const itemToDelete = (wardrobeItems[category] || []).find(i => i.id === itemId);
     const updated = {
       ...wardrobeItems,
       [category]: wardrobeItems[category].filter(item => item.id !== itemId)
     };
     await saveData('wardrobe-data-v2', updated, setWardrobeItems);
+    trackEvent('delete_item', { category, id: itemId, name: itemToDelete?.name });
   };
 
   const updateWardrobeItem = async (category, itemId, updates) => {
+    const prev = (wardrobeItems[category] || []).find(i => i.id === itemId);
     const updated = {
       ...wardrobeItems,
       [category]: wardrobeItems[category].map(item =>
@@ -239,16 +238,21 @@ const WardrobeApp = () => {
     };
     await saveData('wardrobe-data-v2', updated, setWardrobeItems);
     setEditingItem(null);
+    trackEvent('update_item', { category, id: itemId, before: { name: prev?.name, status: prev?.status, priority: prev?.priority }, after: { name: updates.name || prev?.name, status: updates.status || prev?.status, priority: updates.priority || prev?.priority } });
   };
 
   const addShoppingItem = async (item) => {
-    const updated = [...shoppingList, { ...item, id: Date.now(), purchased: false }];
+    const newObj = { ...item, id: Date.now(), purchased: false };
+    const updated = [...shoppingList, newObj];
     await saveData('shopping-data-v2', updated, setShoppingList);
+    trackEvent('add_shopping', { item: newObj.item, price: newObj.price, priority: newObj.priority });
   };
 
   const removeShoppingItem = async (id) => {
-    const updated = shoppingList.filter(item => item.id !== id);
+    const item = shoppingList.find(i => i.id === id);
+    const updated = shoppingList.filter(i => i.id !== id);
     await saveData('shopping-data-v2', updated, setShoppingList);
+    trackEvent('remove_shopping', { id, item: item?.item });
   };
 
   const togglePurchased = async (id) => {
@@ -256,26 +260,35 @@ const WardrobeApp = () => {
       item.id === id ? { ...item, purchased: !item.purchased, purchasedDate: !item.purchased ? new Date().toISOString().split('T')[0] : null } : item
     );
     await saveData('shopping-data-v2', updated, setShoppingList);
+    const toggled = updated.find(i => i.id === id);
+    trackEvent('toggle_purchased', { id, item: toggled?.item, purchased: toggled?.purchased });
   };
 
   const addOutfit = async (outfit) => {
-    const updated = [...outfits, { ...outfit, id: Date.now() }];
+    const newObj = { ...outfit, id: Date.now() };
+    const updated = [...outfits, newObj];
     await saveData('outfits-data-v2', updated, setOutfits);
+    trackEvent('add_outfit', { name: newObj.name, items: newObj.items });
   };
 
   const deleteOutfit = async (id) => {
+    const outfit = outfits.find(o => o.id === id);
     const updated = outfits.filter(o => o.id !== id);
     await saveData('outfits-data-v2', updated, setOutfits);
+    trackEvent('delete_outfit', { id, name: outfit?.name });
   };
 
   const addLink = async (link) => {
     const updated = [...inspirationLinks, { id: Date.now(), url: link }];
     await saveData('inspiration-data-v2', updated, setInspirationLinks);
+    trackEvent('add_link', { url: link });
   };
 
   const removeLink = async (id) => {
+    const link = inspirationLinks.find(l => l.id === id);
     const updated = inspirationLinks.filter(l => l.id !== id);
     await saveData('inspiration-data-v2', updated, setInspirationLinks);
+    trackEvent('remove_link', { id, url: link?.url });
   };
 
   const handlePhotoUpload = (e, itemId, category) => {
@@ -285,12 +298,11 @@ const WardrobeApp = () => {
       reader.onloadend = () => {
         const photoData = reader.result;
         if (itemId) {
-          // Обновляем существующую вещь
           updateWardrobeItem(category, itemId, { photo: photoData });
         } else {
-          // Добавляем к новой вещи
           setNewItem({...newItem, photo: photoData});
         }
+        trackEvent('upload_photo', { itemId: itemId || null, category });
       };
       reader.readAsDataURL(file);
     }
@@ -302,13 +314,15 @@ const WardrobeApp = () => {
     } else {
       setNewItem({...newItem, photo: ''});
     }
+    trackEvent('remove_photo', { itemId: itemId || null, category });
   };
 
+  // ---- Utilities & stats ----
   const getStats = () => {
     const all = Object.values(wardrobeItems).flat();
     const owned = all.filter(i => i.status === 'есть').length;
     const needed = all.filter(i => i.status !== 'есть').length;
-    const critical = all.filter(i => i.priority === 'критичный').length;
+    const critical = all.filter(i => i.priority === 'критичный' || i.priority === 'КРИТИЧНО').length;
     const total = all.length;
     const completion = total > 0 ? Math.round((owned / total) * 100) : 0;
     const shoppingTotal = shoppingList.reduce((sum, item) => {
@@ -316,92 +330,6 @@ const WardrobeApp = () => {
       return sum + (match ? parseInt(match[1]) : 0);
     }, 0);
     return { total, owned, needed, critical, completion, shoppingTotal };
-  };
-
-  const getAnalytics = () => {
-    const all = Object.values(wardrobeItems).flat();
-    
-    // Статистика по категориям
-    const byCategory = Object.entries(wardrobeItems).map(([cat, items]) => ({
-      name: categories.find(c => c.id === cat)?.name || cat,
-      total: items.length,
-      owned: items.filter(i => i.status === 'есть').length,
-      needed: items.filter(i => i.status !== 'есть').length
-    }));
-
-    // Статистика по тегам
-    const tagCounts = {};
-    all.forEach(item => {
-      if (item.tags) {
-        item.tags.split(',').forEach(tag => {
-          const cleanTag = tag.trim();
-          tagCounts[cleanTag] = (tagCounts[cleanTag] || 0) + 1;
-        });
-      }
-    });
-    const topTags = Object.entries(tagCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([tag, count]) => ({ tag, count }));
-
-    // Статистика по приоритетам
-    const byPriority = {
-      критичный: all.filter(i => i.priority === 'критичный').length,
-      высокий: all.filter(i => i.priority === 'высокий').length,
-      средний: all.filter(i => i.priority === 'средний').length,
-      низкий: all.filter(i => i.priority === 'низкий').length
-    };
-
-    // История покупок
-    const purchaseHistory = shoppingList
-      .filter(i => i.purchased && i.purchasedDate)
-      .sort((a, b) => new Date(b.purchasedDate) - new Date(a.purchasedDate))
-      .slice(0, 10);
-
-    // Статистика по месяцам (последние 6 месяцев)
-    const monthlyStats = {};
-    purchaseHistory.forEach(item => {
-      if (item.purchasedDate) {
-        const month = item.purchasedDate.substring(0, 7); // YYYY-MM
-        if (!monthlyStats[month]) {
-          monthlyStats[month] = { count: 0, items: [] };
-        }
-        monthlyStats[month].count++;
-        monthlyStats[month].items.push(item.item);
-      }
-    });
-
-    // Рекомендации
-    const recommendations = [];
-    
-    // Проверяем базовые вещи
-    const basicTags = ['базовый', 'базовые'];
-    const basicItems = all.filter(i => basicTags.some(tag => i.tags?.includes(tag)));
-    const missingBasics = basicItems.filter(i => i.status !== 'есть').length;
-    if (missingBasics > 0) {
-      recommendations.push(`У вас не хватает ${missingBasics} базовых вещей`);
-    }
-
-    // Проверяем критичные покупки
-    const criticalNeeded = all.filter(i => i.priority === 'критичный' && i.status !== 'есть').length;
-    if (criticalNeeded > 0) {
-      recommendations.push(`${criticalNeeded} критичных покупок требуют внимания`);
-    }
-
-    // Проверяем незавершенные образы
-    const incompleteOutfits = outfits.filter(o => !checkOutfit(o).complete).length;
-    if (incompleteOutfits > 0) {
-      recommendations.push(`${incompleteOutfits} образов не готовы к использованию`);
-    }
-
-    return {
-      byCategory,
-      topTags,
-      byPriority,
-      purchaseHistory,
-      monthlyStats,
-      recommendations
-    };
   };
 
   const checkOutfit = (outfit) => {
@@ -413,26 +341,157 @@ const WardrobeApp = () => {
   };
 
   const exportText = (data, filename) => {
-    const blob = new Blob([data], { type: 'text/plain' });
+    const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   const exportShopping = () => {
-    const text = shoppingList.map(i => `${i.item} - ${i.priority} - ${i.price} - ${i.category}`).join('\n');
+    const text = shoppingList.map(i => `${i.item} - ${i.priority} - ${i.price} - ${i.category} ${i.purchased ? `(куплено ${i.purchasedDate || ''})` : ''}`).join('\n');
     exportText(text, 'shopping-list.txt');
+    trackEvent('export_shopping', { count: shoppingList.length });
   };
 
   const exportWardrobe = () => {
     const text = Object.entries(wardrobeItems).map(([cat, items]) =>
-      `\n=== ${cat.toUpperCase()} ===\n` + items.map(i => `${i.name} - ${i.status} - ${i.priority}`).join('\n')
+      `\n=== ${cat.toUpperCase()} ===\n` + items.map(i => `${i.name} - ${i.status} - ${i.priority} - ${i.tags || ''}`).join('\n')
     ).join('\n');
     exportText(text, 'wardrobe.txt');
+    trackEvent('export_wardrobe', { categories: Object.keys(wardrobeItems).length });
   };
 
+  // ---- New analytics reports ----
+  const computeCategoryStats = () => {
+    const cats = Object.entries(wardrobeItems);
+    return cats.map(([cat, items]) => {
+      const total = items.length;
+      const owned = items.filter(i => i.status === 'есть').length;
+      const needed = total - owned;
+      const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
+      return { category: cat, total, owned, needed, percent };
+    });
+  };
+
+  const getTopTags = (topN = 10) => {
+    const all = Object.values(wardrobeItems).flat();
+    const map = {};
+    all.forEach(i => {
+      const tags = (i.tags || '').split(',').map(t => t.trim().toLowerCase()).filter(t => t);
+      tags.forEach(t => map[t] = (map[t] || 0) + 1);
+    });
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0, topN).map(([tag,count]) => ({tag, count}));
+  };
+
+  const getPriorityStats = () => {
+    const all = Object.values(wardrobeItems).flat();
+    const map = {};
+    all.forEach(i => {
+      const p = (i.priority || 'низкий').toString();
+      map[p] = (map[p] || 0) + 1;
+    });
+    return Object.entries(map).map(([priority, count]) => ({ priority, count }));
+  };
+
+  const getPurchaseHistoryLast = (n = 10) => {
+    const purchased = shoppingList.filter(i => i.purchased).slice();
+    purchased.sort((a,b) => {
+      const da = a.purchasedDate ? new Date(a.purchasedDate).getTime() : a.id;
+      const db = b.purchasedDate ? new Date(b.purchasedDate).getTime() : b.id;
+      return db - da;
+    });
+    return purchased.slice(0, n);
+  };
+
+  const getPurchasesByMonth = () => {
+    const purchased = shoppingList.filter(i => i.purchased && i.purchasedDate);
+    const map = {};
+    purchased.forEach(p => {
+      const d = new Date(p.purchasedDate);
+      if (isNaN(d)) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      map[key] = map[key] || [];
+      map[key].push(p);
+    });
+    const entries = Object.entries(map).sort((a,b)=>b[0].localeCompare(a[0])); // recent first
+    return entries.map(([month, items]) => ({ month, items }));
+  };
+
+  const getRecommendations = () => {
+    const recs = [];
+    // Проверка базовых вещей: если в категории нет owned >=1 -> рекомендуем
+    const catStats = computeCategoryStats();
+    const basicsMissing = catStats.filter(cs => cs.owned === 0).map(cs => cs.category);
+    if (basicsMissing.length > 0) {
+      recs.push({ title: 'Проверка базовых вещей', text: `В категориях отсутствуют вещи: ${basicsMissing.join(', ')}.` });
+    } else {
+      recs.push({ title: 'Проверка базовых вещей', text: 'Базовые категории заполнены.' });
+    }
+    // Критичные покупки
+    const criticals = shoppingList.filter(s => {
+      const p = (s.priority || '').toString().toLowerCase();
+      return p.includes('крит') || p.includes('критичный');
+    });
+    if (criticals.length > 0) {
+      recs.push({ title: 'Критичные покупки', text: criticals.map(c => `${c.item} ${c.price ? `(${c.price})` : ''}`).join('; ') });
+    } else {
+      recs.push({ title: 'Критичные покупки', text: 'Нет критичных покупок.' });
+    }
+    // Незавершённые образы
+    const incomplete = outfits.map(o => ({ ...o, check: checkOutfit(o) })).filter(o => !o.check.complete);
+    if (incomplete.length > 0) {
+      recs.push({ title: 'Незавершённые образы', text: incomplete.map(i => `${i.name}: не хватает ${i.check.missing.join(', ')}`).join('\n') });
+    } else {
+      recs.push({ title: 'Незавершённые образы', text: 'Все образы собраны.' });
+    }
+    return recs;
+  };
+
+  const exportFullReport = () => {
+    const s = getStats();
+    const cat = computeCategoryStats();
+    const tags = getTopTags(50);
+    const pr = getPriorityStats();
+    const purchases = getPurchaseHistoryLast(50);
+    const purchasesByMonth = getPurchasesByMonth();
+    const recs = getRecommendations();
+
+    let txt = '';
+    txt += `Отчёт: Мой гардероб\nДата: ${new Date().toISOString()}\n\n`;
+    txt += `Общие показатели:\n`;
+    txt += `- Всего вещей: ${s.total}\n- Есть: ${s.owned}\n- Нужно: ${s.needed}\n- Критичных: ${s.critical}\n- Готовность: ${s.completion}%\n- Бюджет в шопинг-листе (приблизительно): €${s.shoppingTotal}+\n\n`;
+
+    txt += `Статистика по категориям:\n`;
+    cat.forEach(c => {
+      txt += `- ${c.category}: ${c.owned}/${c.total} (процент: ${c.percent}%)\n`;
+    });
+    txt += `\nТоп тегов:\n`;
+    tags.forEach(t => txt += `- ${t.tag}: ${t.count}\n`);
+    txt += `\nСтатистика по приоритетам:\n`;
+    pr.forEach(p => txt += `- ${p.priority}: ${p.count}\n`);
+
+    txt += `\nИстория покупок (последние ${purchases.length}):\n`;
+    purchases.forEach(p => txt += `- ${p.item} ${p.price ? `(${p.price})` : ''} куплено: ${p.purchasedDate || 'нет даты'}\n`);
+
+    txt += `\nПокупки по месяцам:\n`;
+    purchasesByMonth.forEach(m => {
+      txt += `\n${m.month}:\n`;
+      m.items.forEach(it => txt += `  - ${it.item} (${it.purchasedDate || ''})\n`);
+    });
+
+    txt += `\nРекомендации:\n`;
+    getRecommendations().forEach(r => {
+      txt += `\n${r.title}:\n${r.text}\n`;
+    });
+
+    exportText(txt, 'wardrobe-full-report.txt');
+    trackEvent('export_full_report', { totalItems: s.total, shoppingTotal: s.shoppingTotal });
+  };
+
+  // ---- UI helpers ----
   const categories = [
     { id: 'all', name: 'Все' },
     { id: 'suits', name: 'Костюмы' },
@@ -464,189 +523,167 @@ const WardrobeApp = () => {
   );
 
   const stats = getStats();
-  const analytics = getAnalytics();
 
+  // ---- Rendering analytics dashboard ----
   const renderAnalytics = () => {
+    const catStats = computeCategoryStats();
+    const topTags = getTopTags(10);
+    const priorityStats = getPriorityStats();
+    const recentPurchases = getPurchaseHistoryLast(10);
+    const purchasesByMonth = getPurchasesByMonth();
+    const recs = getRecommendations();
+
     return (
       <div className="space-y-4">
-        {/* Заголовок */}
-        <div className="bg-gradient-to-r from-purple-900 to-blue-900 rounded-lg p-4">
-          <h2 className="text-white text-xl font-bold mb-1">Аналитика гардероба</h2>
-          <p className="text-purple-200 text-sm">Детальная статистика и рекомендации</p>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-white text-xl font-bold flex items-center gap-2"><TrendingUp className="w-5 h-5" />Аналитика</h2>
+          <div className="flex gap-2">
+            <button onClick={exportFullReport} className="px-3 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded flex items-center gap-2">
+              <Download className="w-4 h-4" /> Скачать отчёт
+            </button>
+            <button onClick={() => { setShowAnalytics(false); trackEvent('analytics_close'); }} className="px-3 py-2 bg-gray-700 text-white rounded">Закрыть</button>
+          </div>
         </div>
 
-        {/* Рекомендации */}
-        {analytics.recommendations.length > 0 && (
-          <div className="bg-orange-900 bg-opacity-20 border border-orange-900 rounded-lg p-4">
-            <h3 className="text-orange-300 font-bold mb-3 flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Рекомендации
-            </h3>
-            <div className="space-y-2">
-              {analytics.recommendations.map((rec, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-orange-200 text-sm">
-                  <span className="text-orange-400 mt-1">•</span>
-                  <span>{rec}</span>
-                </div>
-              ))}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-gray-400 text-xs">Общее</div>
+            <div className="text-white text-2xl font-bold">{stats.total} вещей</div>
+            <div className="flex gap-2 mt-3">
+              <div className="text-green-400 font-bold">{stats.owned} есть</div>
+              <div className="text-red-400 font-bold">{stats.needed} нужно</div>
             </div>
-          </div>
-        )}
-
-        {/* Статистика по категориям */}
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            По категориям
-          </h3>
-          <div className="space-y-3">
-            {analytics.byCategory.map((cat, idx) => (
-              <div key={idx}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-300">{cat.name}</span>
-                  <span className="text-gray-400">{cat.owned}/{cat.total}</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div 
-                    className="bg-green-500 h-2 rounded-full transition-all"
-                    style={{ width: `${cat.total > 0 ? (cat.owned / cat.total) * 100 : 0}%` }}
-                  />
-                </div>
-                {cat.needed > 0 && (
-                  <div className="text-xs text-red-400 mt-1">Нужно купить: {cat.needed}</div>
-                )}
+            <div className="mt-3">
+              <div className="text-gray-400 text-xs">Готовность</div>
+              <div className="w-full bg-gray-700 h-3 rounded mt-1 overflow-hidden">
+                <div className="bg-blue-500 h-3" style={{ width: `${stats.completion}%` }} />
               </div>
-            ))}
+              <div className="text-sm mt-1">{stats.completion}%</div>
+            </div>
           </div>
-        </div>
 
-        {/* Топ тегов */}
-        {analytics.topTags.length > 0 && (
           <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-              <Tag className="w-5 h-5" />
-              Популярные теги
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {analytics.topTags.map((tag, idx) => (
-                <div key={idx} className="px-3 py-1 bg-blue-900 text-blue-200 rounded-full text-sm flex items-center gap-2">
-                  <span>{tag.tag}</span>
-                  <span className="bg-blue-800 px-2 py-0.5 rounded-full text-xs">{tag.count}</span>
+            <div className="text-gray-400 text-xs">В шопинг-листе (не куплено)</div>
+            <div className="text-yellow-300 text-2xl font-bold">{shoppingList.filter(i => !i.purchased).length}</div>
+            <div className="text-gray-400 text-xs mt-2">Примерный бюджет: €{stats.shoppingTotal}+</div>
+            <div className="mt-3">
+              <div className="text-gray-400 text-xs">Критичных</div>
+              <div className="text-red-500 text-2xl font-bold">{stats.critical}</div>
+            </div>
+          </div>
+
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-gray-400 text-xs">События аналитики</div>
+            <div className="text-white font-bold text-lg mt-2">{analyticsEvents.length}</div>
+            <div className="text-gray-400 text-xs mt-2">Последние события:</div>
+            <div className="max-h-28 overflow-auto text-sm text-gray-300 mt-1">
+              {analyticsEvents.slice(-8).reverse().map(e => (
+                <div key={e.id} className="text-xs border-b border-gray-700 py-1">
+                  <div className="text-gray-300">{e.type}</div>
+                  <div className="text-gray-500 text-[11px]">{new Date(e.ts).toLocaleString()}</div>
                 </div>
               ))}
             </div>
           </div>
-        )}
-
-        {/* Статистика по приоритетам */}
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-            <PieChart className="w-5 h-5" />
-            По приоритетам
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-red-900 bg-opacity-30 border border-red-900 rounded p-3">
-              <div className="text-red-300 text-xs mb-1">Критичный</div>
-              <div className="text-red-100 text-2xl font-bold">{analytics.byPriority.критичный}</div>
-            </div>
-            <div className="bg-orange-900 bg-opacity-30 border border-orange-900 rounded p-3">
-              <div className="text-orange-300 text-xs mb-1">Высокий</div>
-              <div className="text-orange-100 text-2xl font-bold">{analytics.byPriority.высокий}</div>
-            </div>
-            <div className="bg-yellow-900 bg-opacity-30 border border-yellow-900 rounded p-3">
-              <div className="text-yellow-300 text-xs mb-1">Средний</div>
-              <div className="text-yellow-100 text-2xl font-bold">{analytics.byPriority.средний}</div>
-            </div>
-            <div className="bg-gray-700 bg-opacity-30 border border-gray-600 rounded p-3">
-              <div className="text-gray-300 text-xs mb-1">Низкий</div>
-              <div className="text-gray-100 text-2xl font-bold">{analytics.byPriority.низкий}</div>
-            </div>
-          </div>
         </div>
 
-        {/* История покупок */}
-        {analytics.purchaseHistory.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Последние покупки
-            </h3>
+            <h3 className="text-white font-medium mb-2">Статистика по категориям</h3>
             <div className="space-y-2">
-              {analytics.purchaseHistory.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-700 pb-2">
-                  <span className="text-gray-300">{item.item}</span>
-                  <span className="text-gray-500">{item.purchasedDate}</span>
+              {catStats.map(c => (
+                <div key={c.category} className="space-y-1">
+                  <div className="flex justify-between text-sm text-gray-300">
+                    <div>{c.category}</div>
+                    <div>{c.owned}/{c.total} ({c.percent}%)</div>
+                  </div>
+                  <div className="w-full bg-gray-700 h-3 rounded overflow-hidden">
+                    <div className="bg-green-500 h-3" style={{ width: `${c.percent}%` }} />
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-        )}
 
-        {/* Статистика по месяцам */}
-        {Object.keys(analytics.monthlyStats).length > 0 && (
           <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Покупки по месяцам
-            </h3>
-            <div className="space-y-3">
-              {Object.entries(analytics.monthlyStats)
-                .sort((a, b) => b[0].localeCompare(a[0]))
-                .map(([month, data], idx) => (
-                  <div key={idx} className="bg-gray-700 rounded p-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-white font-medium">{month}</span>
-                      <span className="text-green-400 font-bold">{data.count} покупок</span>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {data.items.join(', ')}
-                    </div>
-                  </div>
-                ))}
+            <h3 className="text-white font-medium mb-2">Популярные теги</h3>
+            <div className="space-y-2">
+              {topTags.length === 0 && <div className="text-gray-400">Тегов нет</div>}
+              {topTags.map(t => (
+                <div key={t.tag} className="flex justify-between text-sm text-gray-300">
+                  <div>#{t.tag}</div>
+                  <div className="text-yellow-300 font-bold">{t.count}</div>
+                </div>
+              ))}
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Кнопка экспорта отчета */}
-        <button
-          onClick={() => {
-            const report = `
-=== ОТЧЕТ ПО ГАРДЕРОБУ ===
-Дата: ${new Date().toLocaleDateString()}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <h4 className="text-white font-medium mb-2">Статистика по приоритетам</h4>
+            <div className="space-y-2">
+              {priorityStats.map(p => (
+                <div key={p.priority} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${p.priority === 'критичный' || p.priority.toLowerCase().includes('крит') ? 'bg-red-500' : p.priority.toLowerCase().includes('высок') ? 'bg-orange-500' : p.priority.toLowerCase().includes('средн') ? 'bg-yellow-500' : 'bg-gray-500'}`} />
+                    <div className="text-sm text-gray-300">{p.priority}</div>
+                  </div>
+                  <div className="text-white font-bold">{p.count}</div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-ОБЩАЯ СТАТИСТИКА:
-- Всего вещей: ${stats.total}
-- Есть в наличии: ${stats.owned}
-- Нужно купить: ${stats.needed}
-- Готовность: ${stats.completion}%
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 md:col-span-2">
+            <h4 className="text-white font-medium mb-2">Рекомендации</h4>
+            <div className="space-y-2">
+              {recs.map((r, idx) => (
+                <div key={idx} className="bg-gray-900 p-3 rounded border border-gray-700">
+                  <div className="text-sm text-yellow-200 font-semibold">{r.title}</div>
+                  <div className="text-sm text-gray-300 whitespace-pre-wrap mt-1">{r.text}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-СТАТИСТИКА ПО КАТЕГОРИЯМ:
-${analytics.byCategory.map(c => `- ${c.name}: ${c.owned}/${c.total} (нужно: ${c.needed})`).join('\n')}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <h4 className="text-white font-medium mb-2">История покупок (последние 10)</h4>
+            <div className="space-y-2 text-sm">
+              {recentPurchases.length === 0 && <div className="text-gray-400">Нет купленных вещей</div>}
+              {recentPurchases.map(p => (
+                <div key={p.id} className="flex justify-between items-center">
+                  <div className="text-gray-200">{p.item}</div>
+                  <div className="text-gray-400 text-xs">{p.purchasedDate || '—'}</div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-ПРИОРИТЕТЫ:
-- Критичных: ${analytics.byPriority.критичный}
-- Высоких: ${analytics.byPriority.высокий}
-- Средних: ${analytics.byPriority.средний}
-- Низких: ${analytics.byPriority.низкий}
-
-РЕКОМЕНДАЦИИ:
-${analytics.recommendations.map(r => `- ${r}`).join('\n')}
-`;
-            exportText(report, 'wardrobe-report.txt');
-          }}
-          className="w-full px-4 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded flex items-center justify-center gap-2 font-medium"
-        >
-          <Download className="w-5 h-5" />
-          Скачать полный отчет
-        </button>
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <h4 className="text-white font-medium mb-2">Покупки по месяцам</h4>
+            <div className="space-y-2 text-sm">
+              {purchasesByMonth.length === 0 && <div className="text-gray-400">Нет данных по месяцам</div>}
+              {purchasesByMonth.map(m => (
+                <div key={m.month} className="border-b border-gray-700 pb-2 mb-2">
+                  <div className="text-yellow-300 font-semibold">{m.month}</div>
+                  {m.items.map(it => <div key={it.id} className="text-gray-300 text-sm">- {it.item} ({it.purchasedDate})</div>)}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
 
+  // ---- Rendering wardrobe list (original) ----
   const renderWardrobe = () => {
     let items = selectedCategory === 'all' 
       ? Object.entries(wardrobeItems).flatMap(([cat, its]) => its.map(i => ({...i, category: cat})))
-      : wardrobeItems[selectedCategory] || [];
+      : (wardrobeItems[selectedCategory] || []).map(i=>({...i, category: selectedCategory}));
 
     if (searchQuery) {
       items = items.filter(i => 
@@ -752,6 +789,13 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
               >
                 <Grid className="w-4 h-4" />
               </button>
+              <button
+                onClick={() => { setShowAnalytics(s => !s); trackEvent('toggle_analytics', { open: !showAnalytics }); }}
+                className={`p-2 rounded ${showAnalytics ? 'bg-blue-700 text-white' : 'bg-gray-700 text-gray-300'}`}
+                title="Аналитика"
+              >
+                📊
+              </button>
             </div>
 
             <button onClick={exportWardrobe}
@@ -773,6 +817,7 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
           ))}
         </div>
 
+        {/* Add item card omitted for brevity — kept identical to original for UI parity */}
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <h3 className="text-white font-medium mb-3">Добавить вещь</h3>
           <div className="space-y-3">
@@ -840,6 +885,7 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
           </div>
         </div>
 
+        {/* Items list / grid */}
         <div className={viewMode === 'list' ? 'grid gap-3' : 'hidden'}>
           {items.map(item => (
             <div key={item.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
@@ -848,7 +894,7 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
                   <input type="text" value={item.name}
                     onChange={(e) => {
                       const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                        wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, name: e.target.value} : i)};
+                        (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, name: e.target.value} : i)};
                       setWardrobeItems(u);
                     }}
                     className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
@@ -857,7 +903,7 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
                     <select value={item.status}
                       onChange={(e) => {
                         const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                          wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, status: e.target.value} : i)};
+                          (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, status: e.target.value} : i)};
                         setWardrobeItems(u);
                       }}
                       className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
@@ -869,7 +915,7 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
                     <select value={item.priority}
                       onChange={(e) => {
                         const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                          wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, priority: e.target.value} : i)};
+                          (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, priority: e.target.value} : i)};
                         setWardrobeItems(u);
                       }}
                       className="px-3 py-2 bg-gray-900 text-white rounded border border-gray-700">
@@ -883,7 +929,7 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
                   <input type="text" placeholder="Теги" value={item.tags || ''}
                     onChange={(e) => {
                       const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                        wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, tags: e.target.value} : i)};
+                        (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, tags: e.target.value} : i)};
                       setWardrobeItems(u);
                     }}
                     className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
@@ -891,7 +937,7 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
                   <textarea placeholder="Заметки" value={item.notes || ''} rows="2"
                     onChange={(e) => {
                       const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                        wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, notes: e.target.value} : i)};
+                        (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, notes: e.target.value} : i)};
                       setWardrobeItems(u);
                     }}
                     className="w-full px-3 py-2 bg-gray-900 text-white rounded border border-gray-700" />
@@ -904,7 +950,7 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
                         <button
                           onClick={() => {
                             const u = {...wardrobeItems, [item.category || selectedCategory]: 
-                              wardrobeItems[item.category || selectedCategory].map(i => i.id === item.id ? {...i, photo: ''} : i)};
+                              (wardrobeItems[item.category || selectedCategory] || []).map(i => i.id === item.id ? {...i, photo: ''} : i)};
                             setWardrobeItems(u);
                           }}
                           className="absolute top-2 right-2 p-1 bg-red-900 hover:bg-red-800 rounded"
@@ -1378,7 +1424,7 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
       </div>
 
       <div className="p-4">
-        {activeTab === 'wardrobe' && renderWardrobe()}
+        {activeTab === 'wardrobe' && (showAnalytics ? renderAnalytics() : renderWardrobe())}
         {activeTab === 'shopping' && renderShoppingList()}
         {activeTab === 'outfits' && renderOutfits()}
         {activeTab === 'inspiration' && renderInspiration()}
@@ -1388,9 +1434,3 @@ ${analytics.recommendations.map(r => `- ${r}`).join('\n')}
 };
 
 export default WardrobeApp;
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<WardrobeApp />);
-
-  </script>
-</body>
-</html>
